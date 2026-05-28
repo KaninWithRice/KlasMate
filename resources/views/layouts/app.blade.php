@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rebyu - Academic Repository</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-[#f0f0f0] flex justify-center items-start min-h-screen">
+    <div class="w-full max-w-[390px] min-h-screen bg-white shadow-2xl relative overflow-x-hidden">
+        @if(session('success'))
+            <x-alert :message="session('success')" type="success" />
+        @endif
+
+        @if(session('error'))
+            <x-alert :message="session('error')" type="error" />
+        @endif
+
+        @yield('content')
+    </div>
+</body>
+</html>

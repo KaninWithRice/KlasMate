@@ -1,0 +1,303 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="p-8 pb-24" x-data="{ 
+    openDropdown: null, 
+    showModal: false, 
+    showDeleteModal: false,
+    isEdit: false,
+    search: '',
+    modalData: { id: '', name: '', code: '', semester: '', color: 'bg-[#f5c32f]', is_public: 1 },
+    colors: ['bg-[#f5c32f]', 'bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#ff5aa9]', 'bg-[#af78d3]', 'bg-[#000000]', 'bg-[#ffffff]'],
+    allFolders: {{ $allFolders->toJson() }},
+    currentUserId: {{ auth()->id() }},
+
+    get filteredFolders() {
+        let folders = this.allFolders;
+        if (this.search) {
+            folders = folders.filter(f => 
+                f.name.toLowerCase().includes(this.search.toLowerCase()) || 
+                (f.code && f.code.toLowerCase().includes(this.search.toLowerCase()))
+            );
+        } else {
+            folders = folders.slice(0, 6);
+        }
+        return folders;
+    },
+
+    openAddModal() {
+        this.isEdit = false;
+        this.modalData = { id: '', name: '', code: '', semester: '', color: 'bg-[#f5c32f]', is_public: 1 };
+        this.showModal = true;
+    },
+    openEditModal(folder) {
+        this.isEdit = true;
+        this.modalData = { 
+            id: folder.id, 
+            name: folder.name, 
+            code: folder.code || '', 
+            semester: folder.semester || '', 
+            color: folder.color || 'bg-[#f5c32f]',
+            is_public: folder.is_public ? 1 : 0
+        };
+        this.showModal = true;
+        this.openDropdown = null;
+    },
+    confirmDelete(folder) {
+        this.modalData = { id: folder.id, name: folder.name };
+        this.showDeleteModal = true;
+        this.openDropdown = null;
+    },
+    copyInviteLink(folder) {
+        const link = window.location.origin + '/repository/' + folder.id + '?token=' + folder.invite_token;
+        navigator.clipboard.writeText(link).then(() => {
+            alert('Invite link copied to clipboard!');
+        });
+        this.openDropdown = null;
+    }
+}">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+        <div class="flex items-center space-x-4">
+            <div class="w-[50px] h-[50px] bg-[#f5c32f] rounded-full flex items-center justify-center border border-black overflow-hidden shadow-sm">
+                @if(auth()->user()->avatar)
+                    <img src="{{ auth()->user()->avatar }}" class="w-full h-full object-cover">
+                @else
+                    <span class="text-[20px] font-bold text-black uppercase">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                @endif
+            </div>
+            <div>
+                <p class="text-[13.6px] text-black">Hello,</p>
+                <p class="text-[19.6px] font-bold text-black leading-tight">{{ auth()->user()->name }}</p>
+            </div>
+        </div>
+        <img src="{{ asset('images/mascot.png') }}" class="w-[60px] h-auto" onerror="this.style.display='none'">
+    </div>
+
+    <!-- Search Bar -->
+    <div class="relative mb-10">
+        <span class="absolute inset-y-0 left-4 flex items-center text-[#787878]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <input type="text" placeholder="Search Course Name or Code" x-model="search"
+            class="w-full pl-12 pr-4 py-2.5 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium text-black placeholder-black/50 shadow-sm">
+    </div>
+
+    <!-- All Courses Title -->
+    <h1 class="text-[31px] font-bold text-black mb-6" x-text="search ? 'Search Results' : 'Courses'"></h1>
+
+    <!-- Courses Grid -->
+    <div class="grid grid-cols-2 gap-4">
+        <template x-for="folder in filteredFolders" :key="folder.id">
+            <div class="relative border border-black rounded-[10px] h-[119px] p-3 flex flex-col justify-between shadow-sm group cursor-pointer" 
+                 :class="folder.color || 'bg-[#f5c32f]'"
+                 @click="window.location.href='/repository/' + folder.id">
+                
+                <div class="flex justify-between items-start">
+                    <div class="flex flex-col">
+                        <p class="text-[15.4px] font-bold leading-tight" 
+                           :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'"
+                           x-text="folder.name"></p>
+                        
+                        <template x-if="!folder.is_public">
+                            <div class="mt-1 flex items-center space-x-1">
+                                <svg class="w-3 h-3 opacity-60" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2m-6-8a3 3 0 0 1 3 3v2H9V5a3 3 0 0 1 3-3z"/>
+                                </svg>
+                                <span class="text-[8px] opacity-60 font-bold uppercase" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'">Private</span>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- 3-Dot Menu Trigger -->
+                    <button class="relative z-10 p-1 -mr-1 hover:bg-black/10 rounded-full transition-colors" 
+                            @click.stop="openDropdown = (openDropdown === folder.id ? null : folder.id)">
+                        <svg class="w-4 h-4" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div x-show="openDropdown === folder.id" 
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         @click.away="openDropdown = null"
+                         x-cloak
+                         class="absolute right-0 top-8 z-30 w-[140px] bg-white border-[0.5px] border-[#787878] rounded-[5px] shadow-lg py-1">
+                        
+                        <template x-if="!folder.is_public">
+                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" @click.stop="copyInviteLink(folder)">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                <span>Copy Invite Link</span>
+                            </button>
+                        </template>
+                        <template x-if="folder.is_public">
+                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" @click.stop="">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                <span>Share</span>
+                            </button>
+                        </template>
+                        
+                        <template x-if="folder.user_id === currentUserId">
+                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 text-red-600 hover:bg-gray-100" 
+                                    @click.stop="confirmDelete(folder)">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                <span>Delete</span>
+                            </button>
+                        </template>
+                        
+                        <template x-if="folder.user_id === currentUserId">
+                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" 
+                                    @click.stop="openEditModal(folder)">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                <span>Edit</span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <template x-if="!folder.is_public">
+                        <svg class="w-6 h-6 opacity-80" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                        </svg>
+                    </template>
+                    <template x-if="folder.is_public">
+                        <svg class="w-6 h-6 opacity-80" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                        </svg>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        <!-- Add Course Card -->
+        <div x-show="!search" class="border border-black border-dashed rounded-[10px] h-[119px] flex flex-col items-center justify-center space-y-2 cursor-pointer hover:bg-black/5 transition-colors"
+             @click="openAddModal()">
+            <svg class="w-8 h-8 text-[#787878]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p class="text-[15.4px] text-[#787878]">Add a course</p>
+        </div>
+
+        <!-- No Results -->
+        <template x-if="search && filteredFolders.length === 0">
+            <div class="col-span-2 py-10 text-center border-2 border-dashed border-[#787878] rounded-[10px]">
+                <p class="text-[#787878] font-bold text-[15.4px]">No courses found matching "<span x-text="search"></span>"</p>
+            </div>
+        </template>
+    </div>
+
+    <!-- Add/Edit Course Modal -->
+    <div x-show="showModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/70 backdrop-blur-[2px]"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-cloak>
+        
+        <div class="bg-white border border-black rounded-[10px] w-full max-w-[326px] p-6 shadow-2xl" @click.away="showModal = false">
+            <h2 class="text-[31px] font-bold text-black mb-6 leading-tight" x-text="isEdit ? 'Edit Course' : 'Add Course'"></h2>
+            
+            <form :action="isEdit ? '/folders/' + modalData.id : '{{ route('folders.store') }}'" method="POST" class="space-y-4">
+                @csrf
+                <template x-if="isEdit">
+                    <input type="hidden" name="_method" value="PUT">
+                </template>
+                
+                <div>
+                    <label class="block text-[10.3px] font-bold text-black mb-1 uppercase tracking-wider">Course Name</label>
+                    <input type="text" name="name" x-model="modalData.name" placeholder="e.g. Software Design" required 
+                        class="w-full px-4 py-2 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[10.3px] font-medium placeholder:text-[#787878]">
+                </div>
+
+                <div>
+                    <label class="block text-[10.3px] font-bold text-black mb-1 uppercase tracking-wider">Course Code</label>
+                    <input type="text" name="code" x-model="modalData.code" placeholder="e.g. CMPE 406" 
+                        class="w-full px-4 py-2 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[10.3px] font-medium placeholder:text-[#787878]">
+                </div>
+
+                <div>
+                    <label class="block text-[10.3px] font-bold text-black mb-1 uppercase tracking-wider">Semester/Term</label>
+                    <input type="text" name="semester" x-model="modalData.semester" placeholder="e.g. Second Sem S.Y. 2025-2026" 
+                        class="w-full px-4 py-2 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[10.3px] font-medium placeholder:text-[#787878]">
+                </div>
+
+                <!-- Color Picker -->
+                <div>
+                    <label class="block text-[10.3px] font-bold text-black mb-2 uppercase tracking-wider">Folder Color</label>
+                    <div class="grid grid-cols-4 gap-3">
+                        <template x-for="color in colors">
+                            <div class="w-full aspect-square rounded-full border border-black cursor-pointer transition-transform hover:scale-110 relative"
+                                 :class="color"
+                                 @click="modalData.color = color">
+                                <div x-show="modalData.color === color" class="absolute inset-0 flex items-center justify-center">
+                                    <svg class="w-4 h-4" :class="in_array(color, ['bg-[#072ac6]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <input type="hidden" name="color" :value="modalData.color">
+                </div>
+
+                <!-- Visibility Toggle -->
+                <div>
+                    <label class="block text-[10.3px] font-bold text-black mb-3 uppercase tracking-wider">Visibility</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="is_public" value="1" x-model="modalData.is_public" class="w-4 h-4 text-[#072ac6] border-black focus:ring-0">
+                            <span class="text-[12px] font-bold text-black">Public</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="is_public" value="0" x-model="modalData.is_public" class="w-4 h-4 text-[#072ac6] border-black focus:ring-0">
+                            <span class="text-[12px] font-bold text-black">Private</span>
+                        </label>
+                    </div>
+                    <p class="text-[9px] text-[#787878] mt-2 italic" x-show="modalData.is_public == 0">
+                        * Private courses can only be accessed via a unique invite link.
+                    </p>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" @click="showModal = false" 
+                        class="flex-1 border-[1.5px] border-black py-2 rounded-full font-bold text-[10.2px] hover:bg-black/5 transition-all text-[#072ac6]">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 bg-[#f5c32f] text-[#072ac6] py-2 rounded-full font-bold text-[10.2px] border-[1.5px] border-black shadow-sm hover:bg-[#e6b62c] transition-all"
+                        x-text="isEdit ? 'Save Changes' : 'Add Course'">
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div x-show="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/70 backdrop-blur-[2px]" x-cloak>
+        <div class="bg-white border border-black rounded-[10px] w-full max-w-[326px] p-6 shadow-2xl text-center">
+            <h2 class="text-[31px] font-bold text-black mb-2 leading-tight">Delete Course</h2>
+            <p class="text-[14px] text-[#787878] mb-8" x-text="modalData.name"></p>
+            <p class="text-[16.4px] font-bold text-black mb-10">Are you sure you want to delete?</p>
+            <div class="flex space-x-3">
+                <button type="button" @click="showDeleteModal = false" class="flex-1 border-[1.5px] border-black py-2 rounded-full font-bold text-[14px]">Cancel</button>
+                <form :action="'/folders/' + modalData.id" method="POST" class="flex-1">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full bg-[#f50220] text-white py-2 rounded-full font-bold text-[14px]">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<x-navigation />
+
+<script>
+    function in_array(needle, haystack) {
+        return haystack && haystack.includes(needle);
+    }
+</script>
+@endsection

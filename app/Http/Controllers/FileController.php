@@ -69,13 +69,14 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
         
-        // 🚀 FOOLPROOF URL GENERATOR
-        $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
-        $bucket = env('AWS_BUCKET', 'reviewers');
+        // 🚀 THE FINAL PROJECT REF FIX:
+        $projectRef = 'stcuxchsqfeaejpjsfkw'; 
+        $bucket = 'reviewers';
         $filename = basename($file->path);
         
-        // Generate the official public Supabase URL
+        // Generate the accurate Supabase URL
         $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
+        
         $streamUrl = route('files.stream', $file);
 
         return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));

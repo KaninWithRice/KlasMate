@@ -54,8 +54,21 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
         
-        // Use the standardized URL generator (fixed in filesystems.php)
-        $publicUrl = Storage::url($file->path);
+        // 🚀 ROBUST SUPABASE URL GENERATOR
+        $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
+        $bucket = env('AWS_BUCKET', 'reviewers');
+        
+        // Get the raw path and strip any leading slashes
+        $path = ltrim($file->path, '/');
+        
+        // 🔥 THE FIX: If the path starts with the bucket name (e.g. 'reviewers/abc.pdf'), 
+        // we strip it to avoid the double-prefix error in the final URL.
+        if (str_starts_with($path, $bucket . '/')) {
+            $path = substr($path, strlen($bucket) + 1);
+        }
+        
+        // Final structure: https://[REF].supabase.co/storage/v1/object/public/[BUCKET]/[FILE]
+        $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$path}";
         
         $streamUrl = route('files.stream', $file);
 

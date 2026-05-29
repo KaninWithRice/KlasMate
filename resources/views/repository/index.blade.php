@@ -13,8 +13,40 @@
     showRenameModal: false,
     showDeleteModal: false,
     showShareModal: false,
+    showShareToFriends: false,
+    shareSearch: '',
+    shareUsers: [],
+    sharingFile: { id: '', name: '', link: '' },
     activeFile: { id: '', name: '' },
     
+    async searchShareUsers() {
+        if (this.shareSearch.length < 1) {
+            this.shareUsers = [];
+            return;
+        }
+        try {
+            const response = await fetch(`/api/users/search?q=${this.shareSearch}`);
+            this.shareUsers = await response.json();
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    openShare(file) {
+        this.sharingFile = {
+            id: file.id,
+            name: file.name,
+            link: window.location.origin + '/files/' + file.id
+        };
+        this.showShareModal = true;
+    },
+
+    copyShareLink() {
+        navigator.clipboard.writeText(this.sharingFile.link).then(() => {
+            alert('Link copied!');
+        });
+    },
+
     copyInviteLink() {
         const link = window.location.origin + window.location.pathname + '?token={{ $folder->invite_token }}';
         navigator.clipboard.writeText(link).then(() => {
@@ -53,7 +85,7 @@
                 <button @click="$dispatch('open-upload-sheet')" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
-                <button @click="{{ $folder && !$folder->is_public ? 'copyInviteLink()' : '' }}" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                <button @click="openShare({ id: 'folder', name: '{{ $folder->name }}' })" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
                 </button>
             </div>
@@ -132,7 +164,7 @@
                              class="absolute right-0 top-8 z-30 w-[120px] bg-white border-[0.5px] border-[#787878] rounded-[5px] shadow-lg py-1">
                             
                             <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="activeFile = { id: {{ $file->id }}, name: '{{ $file->name }}' }; showShareModal = true; openFileDropdown = null">
+                                    @click.stop="openShare({ id: {{ $file->id }}, name: '{{ $file->name }}' }); openFileDropdown = null">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                 <span>Share</span>
                             </button>
@@ -228,6 +260,83 @@
                 <button type="submit" class="flex-1 bg-[#072ac6] text-white py-2 rounded-full font-bold text-[14px]">Rename</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Share Bottom Sheet -->
+<div x-show="showShareModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+    <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareModal = false"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
+         :class="showShareModal ? 'translate-y-0' : 'translate-y-full'">
+        <div class="p-8 pb-12">
+            <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-1 leading-tight">Share a File</h2>
+            <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFile.name + ' | {{ $folder->code }}'"></p>
+            
+            <div class="space-y-6">
+                <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''; searchShareUsers()">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-[30px] h-[30px] text-black">
+                            <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8zm8 7v2m0 0v2m0-2h2m-2 0h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-[16px] font-bold text-black">Share with a KlasMate</p>
+                            <p class="text-[11.8px] text-[#929292] font-medium">Send to people in your friends list</p>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <div class="pt-6 border-t border-[#d9d9d9]">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-[30px] h-[30px] text-black">
+                            <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <p class="text-[16px] font-bold text-black">Share via URL</p>
+                    </div>
+                    <div class="relative">
+                        <input type="text" readonly :value="sharingFile.link" 
+                            class="w-full bg-[#f0f0f0] border-none rounded-[10px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
+                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share to Friends Bottom Sheet -->
+<div x-show="showShareToFriends" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+    <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareToFriends = false"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
+         :class="showShareToFriends ? 'translate-y-0' : 'translate-y-full'">
+        <div class="p-8 pb-12">
+            <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share the file to</h2>
+            
+            <!-- Search in Share -->
+            <div class="relative mb-6">
+                <input type="text" placeholder="Search friends..." x-model="shareSearch" @input.debounce.300ms="searchShareUsers()"
+                    class="w-full px-4 py-2 border border-[#787878] rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium">
+            </div>
+
+            <div class="space-y-4 max-h-[40vh] overflow-y-auto no-scrollbar">
+                <template x-for="user in shareUsers" :key="user.id">
+                    <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
+                        <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
+                        <button class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all"
+                                @click="alert('Shared with ' + user.name + '!')">
+                            Send
+                        </button>
+                    </div>
+                </template>
+                <template x-if="shareUsers.length === 0">
+                    <p class="text-center text-[#929292] py-4">Search for friends to share with</p>
+                </template>
+            </div>
+        </div>
     </div>
 </div>
 

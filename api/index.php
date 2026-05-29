@@ -5,10 +5,14 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Ensure SQLite database exists in /tmp
+// Ensure writable directories exist in /tmp
 $dbPath = '/tmp/database.sqlite';
 if (!file_exists($dbPath)) {
     touch($dbPath);
+}
+
+if (!is_dir('/tmp/bootstrap/cache')) {
+    mkdir('/tmp/bootstrap/cache', 0755, true);
 }
 
 // Check for APP_KEY immediately

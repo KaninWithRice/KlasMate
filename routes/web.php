@@ -22,6 +22,16 @@ Route::get('/migrate', function () {
     }
 });
 
+// TEMPORARY OAUTH DEBUG ROUTE
+Route::get('/debug-oauth', function () {
+    return [
+        'APP_URL' => config('app.url'),
+        'GOOGLE_REDIRECT_URI' => config('services.google.redirect'),
+        'SOCIALITE_REDIRECT_URL' => url('/auth/google/callback'),
+        'ACTUAL_REDIRECT_URI_SENT_TO_GOOGLE' => Socialite::driver('google')->getRedirectGenerationUrl(),
+    ];
+});
+
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');

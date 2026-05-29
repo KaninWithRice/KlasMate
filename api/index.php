@@ -42,6 +42,17 @@ if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/debug-ve
     echo "GOOGLE_REDIRECT_URI: " . getenv('GOOGLE_REDIRECT_URI') . "\n";
     echo "AWS_BUCKET: " . getenv('AWS_BUCKET') . "\n";
     echo "PHP_VERSION: " . PHP_VERSION . "\n";
+    
+    echo "\nSTORAGE TEST:\n";
+    try {
+        $disk = \Storage::disk('s3');
+        echo "Disk resolved successfully.\n";
+        // Attempt to list files in root to see if bucket is reachable
+        $files = $disk->files();
+        echo "Successfully reached bucket. Found " . count($files) . " files.\n";
+    } catch (\Throwable $e) {
+        echo "STORAGE ERROR: " . $e->getMessage() . "\n";
+    }
     exit;
 }
 

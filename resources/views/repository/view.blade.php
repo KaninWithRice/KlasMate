@@ -17,29 +17,21 @@
 
     <!-- Viewer -->
     <div class="flex-1 w-full bg-[#333] relative">
-        @if($isViewable)
-            @if($extension === 'pdf')
-                <iframe src="{{ $streamUrl }}" class="w-full h-full border-none" title="{{ $file->name }}"></iframe>
-            @else
-                <div class="w-full h-full flex items-center justify-center p-4">
-                    <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl" alt="{{ $file->name }}">
-                </div>
-            @endif
+        @if($extension === 'pdf')
+            <object data="{{ $streamUrl }}" type="application/pdf" class="w-full h-full">
+                <iframe src="{{ $streamUrl }}" class="w-full h-full border-none">
+                    <p>Your browser does not support PDFs. <a href="{{ route('files.download', $file) }}">Download instead</a>.</p>
+                </iframe>
+            </object>
+        @elseif(in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+            <div class="w-full h-full flex items-center justify-center p-4">
+                <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl" alt="{{ $file->name }}">
+            </div>
         @else
-            @if(in_array($extension, ['docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls']))
-                <iframe src="https://docs.google.com/viewer?url={{ urlencode(Storage::url($file->path)) }}&embedded=true" class="w-full h-full border-none"></iframe>
-            @else
-                <div class="w-full h-full flex flex-col items-center justify-center text-white space-y-6">
-                    <div class="bg-white/10 p-8 rounded-full">
-                        <svg class="w-20 h-20 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-xl font-bold">Preview not available for this file type</p>
-                        <p class="text-white/60 mt-2">Please download the file to view it.</p>
-                    </div>
-                    <a href="{{ route('files.download', $file) }}" class="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition">Download Now</a>
-                </div>
-            @endif
+            {{-- Office Files and others via Google Docs Viewer --}}
+            <iframe src="https://docs.google.com/viewer?url={{ urlencode(Storage::url($file->path)) }}&embedded=true" 
+                class="w-full h-full border-none bg-white">
+            </iframe>
         @endif
     </div>
 </div>

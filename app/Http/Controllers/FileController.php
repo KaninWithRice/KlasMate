@@ -20,8 +20,8 @@ class FileController extends Controller
         $file = $request->file('file');
         $disk = config('filesystems.default');
         
-        // 🚀 ENSURE WE STORE IN ROOT TO AVOID PATH ISSUES
-        $path = $file->store('', $disk);
+        // 🚀 Store in the bucket root or bucket directory
+        $path = $file->store('reviewers', $disk);
 
         $type = $request->type;
         if (!$type) {
@@ -46,6 +46,21 @@ class FileController extends Controller
         return back()->with('success', 'File uploaded successfully.');
     }
 
+    public function show(File $file)
+    {
+        if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
+            abort(403);
+        }
+        $file->load('comments.user', 'user');
+        return view('repository.show', compact('file'));
+    }
+
+    public function download(File $file)
+    {
+        if (!auth()->check()) abort(403);
+        return Storage::disk(config('filesystems.default'))->download($file->path, $file->name);
+    }
+
     public function view(File $file)
     {
         if (!auth()->check()) abort(403);
@@ -54,26 +69,18 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
         
-        $streamUrl = route('files.stream', $file);
-        
-        // 🚀 SMART SUPABASE URL BUILDER
-        $baseUrl = rtrim(env('AWS_URL'), '/');
-        $bucket = env('AWS_BUCKET', 'reviewers');
+        // 🚀 OFFICIAL SUPABASE URL BUILDER
         $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
+        $bucket = env('AWS_BUCKET', 'reviewers');
         
-        // If the user didn't set AWS_URL, build the standard one
-        if (!$baseUrl) {
-            $baseUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}";
+        // Strip bucket name from path if it exists to avoid double prefixing
+        $path = ltrim($file->path, '/');
+        if (str_starts_with($path, $bucket . '/')) {
+            $path = substr($path, strlen($bucket) + 1);
         }
-
-        $filename = basename($file->path);
         
-        // Ensure we don't double up the bucket name if it's already in the baseUrl
-        if (str_ends_with($baseUrl, $bucket)) {
-            $publicUrl = $baseUrl . '/' . $filename;
-        } else {
-            $publicUrl = $baseUrl . '/' . $bucket . '/' . $filename;
-        }
+        $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$path}";
+        $streamUrl = route('files.stream', $file);
 
         return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
     }
@@ -84,24 +91,25 @@ class FileController extends Controller
 
         $disk = Storage::disk(config('filesystems.default'));
         
-        if (!$disk->exists($file->path)) {
-            abort(404, 'File not found.');
+        try {
+            if (!$disk->exists($file->path)) {
+                abort(404, 'File not found in cloud storage.');
+            }
+
+            return response($disk->get($file->path), 200, [
+                'Content-Type' => $disk->mimeType($file->path),
+                'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
+            ]);
+        } catch (\Exception $e) {
+            abort(404, 'Storage error.');
         }
-
-        return response($disk->get($file->path), 200, [
-            'Content-Type' => $disk->mimeType($file->path),
-            'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
-        ]);
-    }
-
-    public function download(File $file)
-    {
-        if (!auth()->check()) abort(403);
-        return Storage::disk(config('filesystems.default'))->download($file->path, $file->name);
     }
 
     public function update(Request $request, File $file)
     {
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized.');
+        }
         $request->validate(['name' => 'required|string|max:255']);
         $file->update(['name' => $request->name]);
         return back()->with('success', 'File renamed successfully!');
@@ -109,7 +117,10 @@ class FileController extends Controller
 
     public function destroy(File $file)
     {
-        // 🚀 FEARLESS DELETE FOR ALL LOGGED IN USERS (For now, to fix the issue)
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized.');
+        }
+
         try {
             Storage::disk(config('filesystems.default'))->delete($file->path);
         } catch (\Exception $e) {}

@@ -354,6 +354,9 @@
                 <button type="submit" class="w-full bg-[#f50220] text-white py-2 rounded-full font-bold text-[14px]">Delete</button>
             </form>
         </div>
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <a :href="'/files/' + activeFile.id + '/force-delete'" class="text-[10px] text-red-400 underline uppercase tracking-widest font-bold">Use Emergency Delete Link</a>
+        </div>
     </div>
 </div>
 

@@ -2,7 +2,7 @@
 
 /**
  * Vercel Bridge for Laravel
- * Enforces writable paths on the Application instance for Vercel compatibility.
+ * Robust bootstrapper that ensures all core services are registered.
  */
 
 // 1. Prepare Writable Filesystem
@@ -35,42 +35,20 @@ try {
     /** @var \Illuminate\Foundation\Application $app */
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-    // FORCE WRITABLE PATHS ON THE APP INSTANCE
+    // Force writable paths
     $app->useStoragePath('/tmp/storage');
     $app->useBootstrapPath('/tmp/bootstrap');
 
-    // Manually run foundational bootstrappers
-    $app->bootstrapWith([
-        \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
-        \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
-        \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
-        \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
-    ]);
+    // Handle the request using the Kernel (This ensures all core bindings like MaintenanceMode are set up)
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
-    // Register essential providers
-    $providers = [
-        \Illuminate\Filesystem\FilesystemServiceProvider::class,
-        \Illuminate\Log\LogServiceProvider::class,
-        \Illuminate\Events\EventServiceProvider::class,
-        \Illuminate\Database\DatabaseServiceProvider::class,
-        \Illuminate\Encryption\EncryptionServiceProvider::class,
-        \Illuminate\Cookie\CookieServiceProvider::class,
-        \Illuminate\Session\SessionServiceProvider::class,
-        \Illuminate\View\ViewServiceProvider::class,
-        \Illuminate\Routing\RoutingServiceProvider::class,
-        \Illuminate\Auth\AuthServiceProvider::class,
-        \Illuminate\Cache\CacheServiceProvider::class,
-        \Illuminate\Pipeline\PipelineServiceProvider::class,
-        \Illuminate\Translation\TranslationServiceProvider::class,
-        \Illuminate\Validation\ValidationServiceProvider::class,
-        \App\Providers\AppServiceProvider::class,
-    ];
+    $response = $kernel->handle(
+        $request = Illuminate\Http\Request::capture()
+    );
 
-    foreach ($providers as $provider) {
-        $app->register($provider);
-    }
+    $response->send();
 
-    $app->handleRequest(\Illuminate\Http\Request::capture());
+    $kernel->terminate($request, $response);
 
 } catch (\Throwable $e) {
     echo "<div style='font-family:sans-serif; padding:20px; border:5px solid #000; margin:20px;'>";

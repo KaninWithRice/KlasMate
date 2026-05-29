@@ -5,6 +5,12 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Ensure SQLite database exists in /tmp
+$dbPath = '/tmp/database.sqlite';
+if (!file_exists($dbPath)) {
+    touch($dbPath);
+}
+
 // Check for APP_KEY immediately
 if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
     echo "<h1>Configuration Error</h1>";
@@ -23,3 +29,4 @@ try {
     echo "<p><strong>File:</strong> " . $e->getFile() . ":" . $e->getLine() . "</p>";
     echo "<pre>" . $e->getTraceAsString() . "</pre>";
 }
+

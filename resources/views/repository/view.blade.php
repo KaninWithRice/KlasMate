@@ -18,15 +18,15 @@
     <!-- Viewer -->
     <div class="flex-1 w-full bg-[#333] relative">
         @if($isPDF)
-            {{-- Modern PDF Embedding --}}
-            <iframe src="{{ $streamUrl }}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full border-none" title="{{ $file->name }}"></iframe>
+            {{-- Use Direct Public URL for PDF Iframe --}}
+            <iframe src="{{ $publicUrl }}" class="w-full h-full border-none bg-white" title="{{ $file->name }}"></iframe>
         @elseif($isImage)
             {{-- High Quality Image Display --}}
             <div class="w-full h-full flex items-center justify-center p-4 bg-[#222]">
                 <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl rounded-lg" alt="{{ $file->name }}">
             </div>
         @else
-            {{-- Microsoft Office Viewer (Often more reliable than Google) --}}
+            {{-- Microsoft Office Viewer --}}
             <div class="w-full h-full flex flex-col">
                 <iframe src="https://view.officeapps.live.com/op/view.aspx?src={{ urlencode($publicUrl) }}" 
                     class="flex-1 w-full border-none bg-white">

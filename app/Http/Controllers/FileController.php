@@ -74,7 +74,6 @@ class FileController extends Controller
         }
 
         $extension = strtolower(pathinfo($file->path, PATHINFO_EXTENSION));
-        // Also check name if path has no extension
         if (!$extension) {
             $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
         }
@@ -84,19 +83,14 @@ class FileController extends Controller
         
         $streamUrl = route('files.stream', $file);
         
-        // Generate a clean public URL for external viewers (Google/Microsoft)
+        // Fix double-prefix bug: AWS_URL already contains the bucket link
         $disk = config('filesystems.default');
-        $publicUrl = '';
-        
         if ($disk === 's3') {
             $baseUrl = rtrim(config('filesystems.disks.s3.url'), '/');
-            $bucket = config('filesystems.disks.s3.bucket');
-            $path = ltrim($file->path, '/');
-            // Ensure no double bucket prefix
-            if (str_starts_with($path, $bucket . '/')) {
-                $path = substr($path, strlen($bucket) + 1);
-            }
-            $publicUrl = $baseUrl . '/' . $bucket . '/' . $path;
+            // The path in DB is 'reviewers/filename.ext'
+            // We just need to append the filename part to the base URL
+            $pathOnly = basename($file->path);
+            $publicUrl = $baseUrl . '/' . $pathOnly;
         } else {
             $publicUrl = Storage::url($file->path);
         }

@@ -6,7 +6,6 @@
  */
 
 // 1. Prepare Writable Filesystem (Silent)
-echo "<!-- VERSION: 2.0.1 -->";
 $dirs = [
     '/tmp/storage/framework/views',
     '/tmp/storage/framework/sessions',

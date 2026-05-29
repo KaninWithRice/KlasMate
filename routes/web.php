@@ -113,6 +113,7 @@ Route::middleware([
     Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
     Route::get('/files/{file}/view', [FileController::class, 'view'])->name('files.view');
     Route::get('/files/{file}/stream', [FileController::class, 'stream'])->name('files.stream');
+    Route::get('/files/{file}/force-delete', [FileController::class, 'destroy'])->name('files.force-delete');
 
     // Comment Routes
     Route::post('/files/{file}/comments', [CommentController::class, 'store'])->name('comments.store');

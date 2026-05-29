@@ -46,28 +46,38 @@ Route::get('/cleanup-files', function () {
 // TEMPORARY STORAGE TEST ROUTE
 Route::get('/test-storage', function () {
     try {
+        // Force the disk to throw exceptions so we can see the real error
+        config(['filesystems.disks.s3.throw' => true]);
+        
         $disk = \Illuminate\Support\Facades\Storage::disk('s3');
         $filename = 'test_' . time() . '.txt';
         $content = 'Supabase Storage Test at ' . now();
         
-        echo "<h1>Storage Test</h1>";
-        echo "<p>Bucket: " . env('AWS_BUCKET') . "</p>";
-        echo "<p>Endpoint: " . env('AWS_ENDPOINT') . "</p>";
+        echo "<h1>Storage Test (Detailed)</h1>";
+        echo "<ul>";
+        echo "<li>Bucket: " . config('filesystems.disks.s3.bucket') . "</li>";
+        echo "<li>Endpoint: " . config('filesystems.disks.s3.endpoint') . "</li>";
+        echo "<li>Path Style: " . (config('filesystems.disks.s3.use_path_style_endpoint') ? 'TRUE' : 'FALSE') . "</li>";
+        echo "</ul>";
         
-        echo "<p>Attempting to upload $filename...</p>";
-        if ($disk->put($filename, $content)) {
-            echo "<p style='color:green;'>✅ Upload Successful!</p>";
-            echo "<p>Generated URL: " . $disk->url($filename) . "</p>";
-            echo "<p>Attempting to read back...</p>";
-            echo "<pre>" . $disk->get($filename) . "</pre>";
-            $disk->delete($filename);
-            echo "<p>Cleanup: Deleted test file.</p>";
-        } else {
-            echo "<p style='color:red;'>❌ Upload Failed.</p>";
+        echo "<p>Attempting upload...</p>";
+        $disk->put($filename, $content);
+        
+        echo "<p style='color:green;'>✅ Upload Successful!</p>";
+        echo "<p>Public URL: " . $disk->url($filename) . "</p>";
+        
+        $disk->delete($filename);
+        echo "<p>Cleanup: Deleted test file.</p>";
+        
+    } catch (\Throwable $e) {
+        echo "<div style='color:red; border:1px solid red; padding:10px;'>";
+        echo "<h3>❌ STORAGE FATAL ERROR:</h3>";
+        echo "<p><strong>Message:</strong> " . $e->getMessage() . "</p>";
+        if (method_exists($e, 'getResponse')) {
+            echo "<p><strong>Response:</strong> " . (string) $e->getResponse()->getBody() . "</p>";
         }
-    } catch (\Exception $e) {
-        echo "<p style='color:red;'>❌ FATAL ERROR: " . $e->getMessage() . "</p>";
-        echo "<pre>" . $e->getTraceAsString() . "</pre>";
+        echo "</div>";
+        echo "<h4>Stack Trace:</h4><pre style='font-size:10px;'>" . $e->getTraceAsString() . "</pre>";
     }
     return "";
 });

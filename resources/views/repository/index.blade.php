@@ -44,6 +44,8 @@
         this.loadingDelete = false;
         this.showDeleteModal = false;
     },
+
+    async searchShareUsers() {
         if (this.shareSearch.length < 1) {
             this.shareUsers = [];
             return;

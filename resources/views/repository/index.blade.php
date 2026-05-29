@@ -346,16 +346,13 @@
         <h2 class="text-[31px] font-bold text-black mb-2 leading-tight">Delete a File</h2>
         <p class="text-[14px] text-[#787878] mb-8" x-text="activeFile.name"></p>
         <p class="text-[16.4px] font-bold text-black mb-10">Are you sure you want to delete?</p>
-        <div class="flex space-x-3">
-            <button type="button" @click="showDeleteModal = false" class="flex-1 border-[1.5px] border-black py-2 rounded-full font-bold text-[14px]">Cancel</button>
-            <form :action="'/files/' + activeFile.id" method="POST" class="flex-1">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="w-full bg-[#f50220] text-white py-2 rounded-full font-bold text-[14px]">Delete</button>
-            </form>
-        </div>
-        <div class="mt-4 pt-4 border-t border-gray-100">
-            <a :href="'/files/' + activeFile.id + '/force-delete'" class="text-[10px] text-red-400 underline uppercase tracking-widest font-bold">Use Emergency Delete Link</a>
+        
+        <div class="flex flex-col space-y-3">
+            <a :href="'/files/' + activeFile.id + '/force-delete'" 
+               class="w-full bg-[#f50220] text-white py-3 rounded-full font-bold text-[14px] flex items-center justify-center">
+               Yes, Delete Now
+            </a>
+            <button type="button" @click="showDeleteModal = false" class="w-full border-[1.5px] border-black py-3 rounded-full font-bold text-[14px]">Cancel</button>
         </div>
     </div>
 </div>

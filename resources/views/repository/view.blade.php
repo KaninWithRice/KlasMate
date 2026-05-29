@@ -21,10 +21,15 @@
             {{-- Use Direct Public URL for PDF Iframe --}}
             <iframe src="{{ $publicUrl }}" class="w-full h-full border-none bg-white" title="{{ $file->name }}"></iframe>
         @elseif($isImage)
-            {{-- Integrated Image Display --}}
+            {{-- Integrated Image Display with Filename --}}
             <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#111]">
-                <img src="{{ $publicUrl }}" class="max-w-full max-h-[80vh] object-contain shadow-2xl rounded-lg" alt="{{ $file->name }}">
-                <p class="text-white/40 text-[10px] mt-4 font-mono">{{ $file->name }}</p>
+                <div class="bg-white/5 px-4 py-2 rounded-full mb-4 border border-white/10">
+                    <p class="text-white font-bold text-sm">{{ $file->name }}</p>
+                </div>
+                <img src="{{ $publicUrl }}" class="max-w-full max-h-[70vh] object-contain shadow-2xl rounded-lg" alt="{{ $file->name }}">
+                <div class="mt-8">
+                    <a href="{{ route('files.download', $file) }}" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm hover:bg-gray-200 transition">Download Image</a>
+                </div>
             </div>
         @else
             {{-- Microsoft Office Viewer --}}
@@ -33,7 +38,8 @@
                     class="flex-1 w-full border-none bg-white">
                 </iframe>
                 <div class="bg-black/80 p-4 text-center border-t border-white/10 backdrop-blur-md">
-                    <p class="text-white/80 text-xs mb-3">If the preview doesn't load, use the link below:</p>
+                    <p class="text-white font-bold text-sm mb-1">{{ $file->name }}</p>
+                    <p class="text-white/80 text-[10px] mb-3">If the preview doesn't load, use the link below:</p>
                     <div class="flex justify-center space-x-4">
                         <a href="{{ $publicUrl }}" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition">Open Original File</a>
                         <a href="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" target="_blank" class="bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/20 transition border border-white/20">Try Google Viewer</a>

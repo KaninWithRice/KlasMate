@@ -152,16 +152,16 @@
                                 <span>Share</span>
                             </button>
                             
-                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 text-red-600 hover:bg-gray-100" 
-                                    @click.stop="activeFile = { id: {{ $file->id }}, name: '{{ addslashes($file->name) }}' }; showDeleteModal = true; openFileDropdown = null">
+                            <a href="/files/{{ $file->id }}/force-delete" class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 text-red-600 hover:bg-red-50" onclick="return confirm('Are you sure you want to delete this file?')">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                 <span>Delete</span>
-                            </button>
-
-                            <a href="/files/{{ $file->id }}/force-delete" class="w-full text-left px-3 py-2 text-[10px] flex items-center space-x-2 text-red-400 font-bold bg-red-50 hover:bg-red-100" onclick="return confirm('Force delete this file record now?')">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span>Quick Delete</span>
                             </a>
+
+                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
+                                    @click.stop="activeFile = { id: {{ $file->id }}, name: '{{ addslashes($file->name) }}' }; showRenameModal = true; openFileDropdown = null">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                                <span>Rename</span>
+                            </button>
                         </div>
                     </div>
                     @endif
@@ -285,24 +285,6 @@
                     </div>
                 </template>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Modal -->
-<div x-show="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/70 backdrop-blur-[2px]" x-cloak>
-    <div class="bg-white border border-black rounded-[10px] w-full max-w-[326px] p-6 shadow-2xl text-center">
-        <h2 class="text-[31px] font-bold text-black mb-2 leading-tight">Delete a File</h2>
-        <p class="text-[14px] text-[#787878] mb-8" x-text="activeFile.name"></p>
-        <p class="text-[16.4px] font-bold text-black mb-10">Are you sure you want to delete?</p>
-        
-        <div class="flex flex-col space-y-3">
-            <form :action="'/files/' + activeFile.id" method="POST" class="w-full">
-                @csrf
-                <input type="hidden" name="_method" value="DELETE">
-                <button type="submit" class="w-full bg-[#f50220] text-white py-3 rounded-full font-bold text-[14px]">Yes, Delete Now</button>
-            </form>
-            <button type="button" @click="showDeleteModal = false" class="w-full border-[1.5px] border-black py-3 rounded-full font-bold text-[14px]">Cancel</button>
         </div>
     </div>
 </div>

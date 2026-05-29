@@ -8,7 +8,7 @@
     },
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "false",
+        "APP_DEBUG": "true",
         "LOG_CHANNEL": "stderr",
         "BOOTSTRAP_CACHE_PATH": "/tmp/bootstrap/cache",
         "VIEW_COMPILED_PATH": "/tmp",

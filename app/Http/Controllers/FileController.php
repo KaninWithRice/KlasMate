@@ -69,7 +69,10 @@ class FileController extends Controller
     public function view(File $file)
     {
         if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
-            abort(403);
+            // Also allow the course owner to view files
+            if ($file->folder->user_id !== auth()->id()) {
+                abort(403);
+            }
         }
 
         $extension = strtolower(pathinfo($file->path, PATHINFO_EXTENSION));
@@ -77,10 +80,20 @@ class FileController extends Controller
         
         $streamUrl = route('files.stream', $file);
         
-        // Correctly generate the public URL for Supabase
+        // Correctly generate the public URL for Supabase (Handling the double 'reviewers/' prefix)
         $disk = config('filesystems.default');
         if ($disk === 's3') {
-            $publicUrl = config('filesystems.disks.s3.url') . '/' . config('filesystems.disks.s3.bucket') . '/' . ltrim($file->path, 'reviewers/');
+            $baseUrl = rtrim(config('filesystems.disks.s3.url'), '/');
+            $bucket = config('filesystems.disks.s3.bucket');
+            
+            // Storage::store() adds the directory prefix, so $file->path is 'reviewers/filename.ext'
+            // We need to make sure we don't end up with /reviewers/reviewers/filename.ext
+            $path = ltrim($file->path, '/');
+            if (str_starts_with($path, $bucket . '/')) {
+                $path = substr($path, strlen($bucket) + 1);
+            }
+            
+            $publicUrl = $baseUrl . '/' . $bucket . '/' . $path;
         } else {
             $publicUrl = Storage::url($file->path);
         }
@@ -91,7 +104,9 @@ class FileController extends Controller
     public function stream(File $file)
     {
         if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
-            abort(403);
+            if ($file->folder->user_id !== auth()->id()) {
+                abort(403);
+            }
         }
 
         if (!Storage::exists($file->path)) {
@@ -110,8 +125,8 @@ class FileController extends Controller
 
     public function update(Request $request, File $file)
     {
-        if ($file->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
-            return back()->with('error', 'You are not the owner of this file!');
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
+            return back()->with('error', 'You are not authorized to rename this file!');
         }
 
         $request->validate(['name' => 'required|string|max:255']);
@@ -121,8 +136,8 @@ class FileController extends Controller
 
     public function destroy(File $file)
     {
-        if ($file->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
-            return back()->with('error', 'You are not the owner of this file!');
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
+            return back()->with('error', 'You are not authorized to delete this file!');
         }
 
         // Delete from cloud storage if it exists

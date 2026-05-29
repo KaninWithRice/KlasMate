@@ -68,37 +68,40 @@ class FileController extends Controller
 
     public function view(File $file)
     {
-        if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
-            // Also allow the course owner to view files
-            if ($file->folder->user_id !== auth()->id()) {
-                abort(403);
-            }
+        // Allow uploader, course owner, or superadmin
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
+            abort(403);
         }
 
         $extension = strtolower(pathinfo($file->path, PATHINFO_EXTENSION));
-        $isViewable = in_array($extension, ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp']);
+        // Also check name if path has no extension
+        if (!$extension) {
+            $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+        }
+
+        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+        $isPDF = $extension === 'pdf';
         
         $streamUrl = route('files.stream', $file);
         
-        // Correctly generate the public URL for Supabase (Handling the double 'reviewers/' prefix)
+        // Generate a clean public URL for external viewers (Google/Microsoft)
         $disk = config('filesystems.default');
+        $publicUrl = '';
+        
         if ($disk === 's3') {
             $baseUrl = rtrim(config('filesystems.disks.s3.url'), '/');
             $bucket = config('filesystems.disks.s3.bucket');
-            
-            // Storage::store() adds the directory prefix, so $file->path is 'reviewers/filename.ext'
-            // We need to make sure we don't end up with /reviewers/reviewers/filename.ext
             $path = ltrim($file->path, '/');
+            // Ensure no double bucket prefix
             if (str_starts_with($path, $bucket . '/')) {
                 $path = substr($path, strlen($bucket) + 1);
             }
-            
             $publicUrl = $baseUrl . '/' . $bucket . '/' . $path;
         } else {
             $publicUrl = Storage::url($file->path);
         }
 
-        return view('repository.view', compact('file', 'isViewable', 'streamUrl', 'extension', 'publicUrl'));
+        return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
     }
 
     public function stream(File $file)

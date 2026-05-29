@@ -17,23 +17,26 @@
 
     <!-- Viewer -->
     <div class="flex-1 w-full bg-[#333] relative">
-        @if($extension === 'pdf')
-            {{-- Direct Stream for PDF --}}
-            <iframe src="{{ $streamUrl }}" class="w-full h-full border-none" title="{{ $file->name }}"></iframe>
-        @elseif(in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-            {{-- Direct Stream for Images --}}
-            <div class="w-full h-full flex items-center justify-center p-4">
-                <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl" alt="{{ $file->name }}">
+        @if($isPDF)
+            {{-- Modern PDF Embedding --}}
+            <iframe src="{{ $streamUrl }}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full border-none" title="{{ $file->name }}"></iframe>
+        @elseif($isImage)
+            {{-- High Quality Image Display --}}
+            <div class="w-full h-full flex items-center justify-center p-4 bg-[#222]">
+                <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl rounded-lg" alt="{{ $file->name }}">
             </div>
         @else
-            {{-- Office Files and others via Google Docs Viewer --}}
+            {{-- Microsoft Office Viewer (Often more reliable than Google) --}}
             <div class="w-full h-full flex flex-col">
-                <iframe src="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" 
+                <iframe src="https://view.officeapps.live.com/op/view.aspx?src={{ urlencode($publicUrl) }}" 
                     class="flex-1 w-full border-none bg-white">
                 </iframe>
-                <div class="bg-white/5 p-4 text-center border-t border-white/10">
-                    <p class="text-white/60 text-xs mb-2">Google Docs Viewer may take a moment to load.</p>
-                    <a href="{{ $publicUrl }}" target="_blank" class="text-blue-400 font-bold text-sm hover:underline">Click here to open directly in new tab</a>
+                <div class="bg-black/80 p-4 text-center border-t border-white/10 backdrop-blur-md">
+                    <p class="text-white/80 text-xs mb-3">If the preview doesn't load, use the link below:</p>
+                    <div class="flex justify-center space-x-4">
+                        <a href="{{ $publicUrl }}" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition">Open Original File</a>
+                        <a href="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" target="_blank" class="bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/20 transition border border-white/20">Try Google Viewer</a>
+                    </div>
                 </div>
             </div>
         @endif

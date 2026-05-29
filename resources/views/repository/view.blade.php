@@ -27,9 +27,15 @@
             </div>
         @else
             {{-- Office Files and others via Google Docs Viewer --}}
-            <iframe src="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" 
-                class="w-full h-full border-none bg-white">
-            </iframe>
+            <div class="w-full h-full flex flex-col">
+                <iframe src="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" 
+                    class="flex-1 w-full border-none bg-white">
+                </iframe>
+                <div class="bg-white/5 p-4 text-center border-t border-white/10">
+                    <p class="text-white/60 text-xs mb-2">Google Docs Viewer may take a moment to load.</p>
+                    <a href="{{ $publicUrl }}" target="_blank" class="text-blue-400 font-bold text-sm hover:underline">Click here to open directly in new tab</a>
+                </div>
+            </div>
         @endif
     </div>
 </div>

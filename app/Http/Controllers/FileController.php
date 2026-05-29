@@ -77,8 +77,13 @@ class FileController extends Controller
         
         $streamUrl = route('files.stream', $file);
         
-        // Get the public URL for external viewers
-        $publicUrl = Storage::url($file->path);
+        // Correctly generate the public URL for Supabase
+        $disk = config('filesystems.default');
+        if ($disk === 's3') {
+            $publicUrl = config('filesystems.disks.s3.url') . '/' . config('filesystems.disks.s3.bucket') . '/' . ltrim($file->path, 'reviewers/');
+        } else {
+            $publicUrl = Storage::url($file->path);
+        }
 
         return view('repository.view', compact('file', 'isViewable', 'streamUrl', 'extension', 'publicUrl'));
     }

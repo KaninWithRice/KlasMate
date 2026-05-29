@@ -20,7 +20,7 @@ class FileController extends Controller
         $file = $request->file('file');
         $disk = config('filesystems.default');
         
-        // 🚀 STORE AT ROOT to avoid 'reviewers/reviewers' path issues
+        // 🚀 STORE AT ROOT for cleanest Supabase URLs
         $path = $file->store('', $disk);
 
         $type = $request->type;
@@ -69,14 +69,13 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
         
-        // 🚀 ULTIMATE CLEAN URL BUILDER
-        $projectRef = 'stcuxchsqfeaejpjsfkw';
-        $bucket = 'reviewers';
+        // 🚀 FOOLPROOF URL GENERATOR
+        $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
+        $bucket = env('AWS_BUCKET', 'reviewers');
         $filename = basename($file->path);
         
-        // This is the guaranteed public URL format for Supabase
+        // Generate the official public Supabase URL
         $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
-        
         $streamUrl = route('files.stream', $file);
 
         return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
@@ -85,13 +84,10 @@ class FileController extends Controller
     public function stream(File $file)
     {
         if (!auth()->check()) abort(403);
-
         $disk = Storage::disk(config('filesystems.default'));
-        
         if (!$disk->exists($file->path)) {
-            abort(404, 'File not found in cloud storage.');
+            abort(404, 'File not found.');
         }
-
         return response($disk->get($file->path), 200, [
             'Content-Type' => $disk->mimeType($file->path),
             'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
@@ -109,14 +105,10 @@ class FileController extends Controller
     public function destroy(File $file)
     {
         $folderId = $file->folder_id;
-
-        // FEARLESS DELETE: Always clean up database
         try {
             Storage::disk(config('filesystems.default'))->delete($file->path);
         } catch (\Exception $e) {}
-
         $file->delete();
-
         return redirect()->route('repository.index', $folderId)->with('success', 'File deleted.');
     }
 }

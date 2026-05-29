@@ -54,11 +54,8 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
         
-        // 🚀 GUARANTEED PUBLIC URL
-        $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
-        $bucket = env('AWS_BUCKET', 'reviewers');
-        $filename = basename($file->path);
-        $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
+        // Use the standardized URL generator (fixed in filesystems.php)
+        $publicUrl = Storage::url($file->path);
         
         $streamUrl = route('files.stream', $file);
 

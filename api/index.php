@@ -24,6 +24,18 @@ putenv('APP_ROUTES_CACHE=/tmp/storage/framework/cache/routes.php');
 putenv('APP_EVENTS_CACHE=/tmp/storage/framework/cache/events.php');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
+// DIRECT DEBUG ROUTE (Bypasses Laravel)
+if (strpos($_SERVER['REQUEST_URI'], '/debug-vercel') !== false) {
+    header('Content-Type: text/plain');
+    echo "VERCEL BRIDGE DIAGNOSTICS\n";
+    echo "=========================\n";
+    echo "APP_URL: " . getenv('APP_URL') . "\n";
+    echo "GOOGLE_REDIRECT_URI: " . getenv('GOOGLE_REDIRECT_URI') . "\n";
+    echo "REQUEST_URI: " . $_SERVER['REQUEST_URI'] . "\n";
+    echo "PHP_VERSION: " . PHP_VERSION . "\n";
+    exit;
+}
+
 // 3. Boot Laravel
 try {
     define('LARAVEL_START', microtime(true));

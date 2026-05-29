@@ -32,30 +32,6 @@ putenv('APP_ROUTES_CACHE=/tmp/storage/framework/cache/routes.php');
 putenv('APP_EVENTS_CACHE=/tmp/storage/framework/cache/events.php');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
-// DIRECT DEBUG ROUTE (Bypasses Laravel)
-if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/debug-vercel') !== false) {
-    header('Content-Type: text/plain');
-    echo "VERCEL BRIDGE DIAGNOSTICS\n";
-    echo "=========================\n";
-    echo "APP_URL: " . getenv('APP_URL') . "\n";
-    echo "FILESYSTEM_DISK: " . getenv('FILESYSTEM_DISK') . "\n";
-    echo "GOOGLE_REDIRECT_URI: " . getenv('GOOGLE_REDIRECT_URI') . "\n";
-    echo "AWS_BUCKET: " . getenv('AWS_BUCKET') . "\n";
-    echo "PHP_VERSION: " . PHP_VERSION . "\n";
-    
-    echo "\nSTORAGE TEST:\n";
-    try {
-        $disk = \Storage::disk('s3');
-        echo "Disk resolved successfully.\n";
-        // Attempt to list files in root to see if bucket is reachable
-        $files = $disk->files();
-        echo "Successfully reached bucket. Found " . count($files) . " files.\n";
-    } catch (\Throwable $e) {
-        echo "STORAGE ERROR: " . $e->getMessage() . "\n";
-    }
-    exit;
-}
-
 // 3. Boot Laravel
 try {
     define('LARAVEL_START', microtime(true));
@@ -68,15 +44,15 @@ try {
     $app->useStoragePath('/tmp/storage');
     $app->useBootstrapPath('/tmp/bootstrap');
 
-    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
 
-    $request = Illuminate\Http\Request::capture();
+    $request = \Illuminate\Http\Request::capture();
 
-    // DIRECT DEBUG ROUTE (Bypasses Laravel Routing but uses bootstrapped app)
+    // 🚀 DIRECT DIAGNOSTIC ROUTE (Runs after app boot)
     if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/debug-vercel') !== false) {
         header('Content-Type: text/plain');
-        echo "VERCEL BRIDGE DIAGNOSTICS\n";
-        echo "=========================\n";
+        echo "VERCEL BRIDGE DIAGNOSTICS (BOOTSTRAPPED)\n";
+        echo "========================================\n";
         echo "APP_URL: " . config('app.url') . "\n";
         echo "FILESYSTEM_DISK: " . config('filesystems.default') . "\n";
         echo "AWS_BUCKET: " . config('filesystems.disks.s3.bucket') . "\n";
@@ -84,14 +60,17 @@ try {
         
         echo "\nSTORAGE TEST:\n";
         try {
-            $files = \Illuminate\Support\Facades\Storage::disk('s3')->files();
-            echo "Successfully reached bucket. Found " . count($files) . " files.\n";
+            // Use fully qualified namespace to avoid "Class not found"
+            $disk = \Illuminate\Support\Facades\Storage::disk('s3');
+            $files = $disk->files();
+            echo "SUCCESS: Reached bucket. Found " . count($files) . " files.\n";
             if (count($files) > 0) {
                 echo "Example file: " . $files[0] . "\n";
-                echo "Generated URL: " . \Illuminate\Support\Facades\Storage::disk('s3')->url($files[0]) . "\n";
+                echo "Generated URL: " . $disk->url($files[0]) . "\n";
             }
         } catch (\Throwable $e) {
             echo "STORAGE ERROR: " . $e->getMessage() . "\n";
+            echo "Trace: " . $e->getFile() . ":" . $e->getLine() . "\n";
         }
         exit;
     }

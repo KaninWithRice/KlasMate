@@ -2,7 +2,7 @@
 
 /**
  * Vercel Bridge for Laravel
- * Manually boots the application and registers providers in a read-only environment.
+ * Enforces writable paths on the Application instance for Vercel compatibility.
  */
 
 // 1. Prepare Writable Filesystem
@@ -22,13 +22,12 @@ if (!file_exists('/tmp/database.sqlite')) {
 }
 
 // 2. Set Environment for Vercel
-$_ENV['APP_CONFIG_CACHE'] = '/tmp/storage/framework/cache/config.php';
-$_ENV['APP_ROUTES_CACHE'] = '/tmp/storage/framework/cache/routes.php';
-$_ENV['APP_EVENTS_CACHE'] = '/tmp/storage/framework/cache/events.php';
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
-$_ENV['BOOTSTRAP_CACHE_PATH'] = '/tmp/bootstrap/cache';
+putenv('APP_CONFIG_CACHE=/tmp/storage/framework/cache/config.php');
+putenv('APP_ROUTES_CACHE=/tmp/storage/framework/cache/routes.php');
+putenv('APP_EVENTS_CACHE=/tmp/storage/framework/cache/events.php');
+putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
-// 3. Boot Laravel with Controlled Bootstrapping
+// 3. Boot Laravel
 try {
     define('LARAVEL_START', microtime(true));
     require __DIR__ . '/../vendor/autoload.php';
@@ -36,8 +35,11 @@ try {
     /** @var \Illuminate\Foundation\Application $app */
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 
+    // FORCE WRITABLE PATHS ON THE APP INSTANCE
+    $app->useStoragePath('/tmp/storage');
+    $app->useBootstrapPath('/tmp/bootstrap');
+
     // Manually run foundational bootstrappers
-    // This sets up config, env, facades, etc.
     $app->bootstrapWith([
         \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
         \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
@@ -45,7 +47,7 @@ try {
         \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
     ]);
 
-    // Now that 'config' exists, we can register providers
+    // Register essential providers
     $providers = [
         \Illuminate\Filesystem\FilesystemServiceProvider::class,
         \Illuminate\Log\LogServiceProvider::class,

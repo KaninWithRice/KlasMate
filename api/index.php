@@ -5,36 +5,31 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Define a global exception handler that prints RAW text and EXITS.
+// This prevents Laravel from ever trying to use its own crashing error handler.
+set_exception_handler(function ($e) {
+    header('Content-Type: text/plain');
+    echo "ROOT EXCEPTION CAUGHT\n";
+    echo "Class: " . get_class($e) . "\n";
+    echo "Message: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
+    echo "Trace:\n" . $e->getTraceAsString();
+    exit;
+});
+
 // Ensure writable directories exist in /tmp
 $dbPath = '/tmp/database.sqlite';
 if (!file_exists($dbPath)) {
     touch($dbPath);
 }
-
 if (!is_dir('/tmp/bootstrap/cache')) {
     mkdir('/tmp/bootstrap/cache', 0755, true);
 }
 
-// Check for APP_KEY and print status (for debugging only)
+// Check for APP_KEY
 if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
-    echo "<h1>Configuration Error</h1>";
-    echo "<p><strong>Your APP_KEY is missing.</strong></p>";
-    echo "<p>Please go to Vercel Dashboard > Settings > Environment Variables and add the <code>APP_KEY</code> from your local .env file.</p>";
-    exit;
-} else {
-    // Hidden debug info to confirm key is present without leaking it
-    echo "<!-- APP_KEY is set -->";
+    die("ERROR: APP_KEY is not set in Vercel environment variables.");
 }
 
-// Define a custom exception handler to catch errors BEFORE Laravel's handler crashes
-set_exception_handler(function ($e) {
-    echo "<h1>Caught Root Exception</h1>";
-    echo "<p><strong>Class:</strong> " . get_class($e) . "</p>";
-    echo "<p><strong>Message:</strong> " . $e->getMessage() . "</p>";
-    echo "<p><strong>File:</strong> " . $e->getFile() . ":" . $e->getLine() . "</p>";
-    echo "<pre>" . $e->getTraceAsString() . "</pre>";
-    exit;
-});
-
-// Forward Vercel requests to normal index.php
+// Boot Laravel
 require __DIR__ . '/../public/index.php';

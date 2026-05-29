@@ -70,9 +70,33 @@ try {
 
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
-    $response = $kernel->handle(
-        $request = Illuminate\Http\Request::capture()
-    );
+    $request = Illuminate\Http\Request::capture();
+
+    // DIRECT DEBUG ROUTE (Bypasses Laravel Routing but uses bootstrapped app)
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/debug-vercel') !== false) {
+        header('Content-Type: text/plain');
+        echo "VERCEL BRIDGE DIAGNOSTICS\n";
+        echo "=========================\n";
+        echo "APP_URL: " . config('app.url') . "\n";
+        echo "FILESYSTEM_DISK: " . config('filesystems.default') . "\n";
+        echo "AWS_BUCKET: " . config('filesystems.disks.s3.bucket') . "\n";
+        echo "AWS_URL: " . config('filesystems.disks.s3.url') . "\n";
+        
+        echo "\nSTORAGE TEST:\n";
+        try {
+            $files = \Illuminate\Support\Facades\Storage::disk('s3')->files();
+            echo "Successfully reached bucket. Found " . count($files) . " files.\n";
+            if (count($files) > 0) {
+                echo "Example file: " . $files[0] . "\n";
+                echo "Generated URL: " . \Illuminate\Support\Facades\Storage::disk('s3')->url($files[0]) . "\n";
+            }
+        } catch (\Throwable $e) {
+            echo "STORAGE ERROR: " . $e->getMessage() . "\n";
+        }
+        exit;
+    }
+
+    $response = $kernel->handle($request);
 
     $response->send();
 

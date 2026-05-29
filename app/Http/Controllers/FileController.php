@@ -86,21 +86,31 @@ class FileController extends Controller
             abort(403);
         }
 
-        if (!Storage::exists($file->path)) {
-            abort(404, 'File not found in storage.');
-        }
-
-        return response()->stream(function () use ($file) {
-            $stream = Storage::readStream($file->path);
-            fpassthru($stream);
-            if (is_resource($stream)) {
-                fclose($stream);
+        try {
+            if (!Storage::exists($file->path)) {
+                abort(404, 'File not found in cloud storage.');
             }
-        }, 200, [
-            'Content-Type' => Storage::mimeType($file->path),
-            'Content-Disposition' => 'inline; filename="' . $file->name . '"',
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-        ]);
+
+            return response()->stream(function () use ($file) {
+                $stream = Storage::readStream($file->path);
+                if ($stream) {
+                    fpassthru($stream);
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+            }, 200, [
+                'Content-Type' => Storage::mimeType($file->path),
+                'Content-Disposition' => 'inline; filename="' . $file->name . '"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            ]);
+        } catch (\Exception $e) {
+            // Handle cases where storage is misconfigured or file was ephemeral
+            if (strpos($e->getMessage(), 'Unable to check existence') !== false) {
+                abort(404, 'File was stored on a temporary drive and is no longer available. Please re-upload.');
+            }
+            throw $e;
+        }
     }
 
     public function update(Request $request, File $file)

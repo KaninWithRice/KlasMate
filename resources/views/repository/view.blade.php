@@ -16,10 +16,18 @@
     </div>
 
     <!-- Viewer -->
-    <div class="flex-1 w-full bg-[#333] relative">
+    <div class="flex-1 w-full bg-[#333] relative overflow-y-auto overflow-x-hidden">
         @if($isPDF)
-            {{-- Use Direct Public URL for PDF Iframe --}}
-            <iframe src="{{ $publicUrl }}" class="w-full h-full border-none bg-white" title="{{ $file->name }}"></iframe>
+            {{-- Enhanced PDF Embedding for Mobile Scrolling --}}
+            <div class="w-full h-full flex flex-col">
+                <object data="{{ $publicUrl }}" type="application/pdf" class="w-full h-full min-h-[calc(100vh-64px)]">
+                    <embed src="{{ $publicUrl }}" type="application/pdf" class="w-full h-full min-h-[calc(100vh-64px)]" />
+                    <div class="p-8 text-center text-white">
+                        <p class="mb-4">This PDF cannot be displayed directly.</p>
+                        <a href="{{ $publicUrl }}" target="_blank" class="bg-blue-600 px-6 py-2 rounded-full font-bold">Open PDF in New Tab</a>
+                    </div>
+                </object>
+            </div>
         @elseif($isImage)
             {{-- Integrated Image Display with Filename --}}
             <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#111]">

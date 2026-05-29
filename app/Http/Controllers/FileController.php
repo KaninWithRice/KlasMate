@@ -106,24 +106,46 @@ class FileController extends Controller
 
     public function stream(File $file)
     {
+        // 1. Permission Check
         if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
             if ($file->folder->user_id !== auth()->id()) {
                 abort(403);
             }
         }
 
-        if (!Storage::exists($file->path)) {
-            abort(404, 'File not found in cloud storage.');
+        // 2. Path Validation
+        $path = (string) $file->path;
+        if (empty($path) || $path === '0') {
+            abort(404, 'Invalid file path in database.');
         }
 
-        $content = Storage::get($file->path);
-        $mime = Storage::mimeType($file->path) ?: 'application/octet-stream';
+        try {
+            // 3. Robust Existence Check
+            if (!Storage::disk(config('filesystems.default'))->exists($path)) {
+                abort(404, 'File not found in cloud storage.');
+            }
 
-        return response($content, 200, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . $file->name . '"',
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-        ]);
+            // 4. Direct Content Fetch
+            $content = Storage::disk(config('filesystems.default'))->get($path);
+            if (!$content) {
+                abort(404, 'Could not retrieve file content.');
+            }
+
+            $mime = Storage::disk(config('filesystems.default'))->mimeType($path) ?: 'application/octet-stream';
+
+            return response($content, 200, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            ]);
+
+        } catch (\Throwable $e) {
+            // Log the actual error for the developer in Vercel logs
+            \Log::error("Storage error for file {$file->id}: " . $e->getMessage());
+            
+            // Return a clean error message to the user
+            abort(404, 'Storage connection error. Please check your Supabase credentials in Vercel.');
+        }
     }
 
     public function update(Request $request, File $file)

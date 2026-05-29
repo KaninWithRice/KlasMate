@@ -12,6 +12,16 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// TEMPORARY MIGRATION ROUTE (Delete this after use!)
+Route::get('/migrate', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return "<h1>Migration Successful!</h1><pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
+    } catch (\Exception $e) {
+        return "<h1>Migration Failed!</h1><pre>" . $e->getMessage() . "</pre>";
+    }
+});
+
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');

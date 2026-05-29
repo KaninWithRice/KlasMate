@@ -19,8 +19,9 @@ class FileController extends Controller
 
         $file = $request->file('file');
         
-        // Upload to storage (using default for now as s3 might not be configured)
-        $path = $file->store('reviewers', 'public');
+        // Use the configured disk (public for local, s3 for Supabase/Production)
+        $disk = config('filesystems.default');
+        $path = $file->store('reviewers', $disk);
 
         $type = $request->type;
         if (!$type) {
@@ -62,7 +63,7 @@ class FileController extends Controller
             abort(403);
         }
 
-        return Storage::disk('public')->download($file->path, $file->name);
+        return Storage::download($file->path, $file->name);
     }
 
     public function view(File $file)
@@ -71,7 +72,28 @@ class FileController extends Controller
             abort(403);
         }
 
-        return response()->file(storage_path('app/public/' . $file->path));
+        $extension = strtolower(pathinfo($file->path, PATHINFO_EXTENSION));
+        $isViewable = in_array($extension, ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp']);
+        
+        // We provide a direct stream URL for the viewer
+        $streamUrl = route('files.stream', $file);
+
+        return view('repository.view', compact('file', 'isViewable', 'streamUrl', 'extension'));
+    }
+
+    public function stream(File $file)
+    {
+        if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return response()->stream(function () use ($file) {
+            echo Storage::get($file->path);
+        }, 200, [
+            'Content-Type' => Storage::mimeType($file->path),
+            'Content-Disposition' => 'inline; filename="' . $file->name . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ]);
     }
 
     public function update(Request $request, File $file)

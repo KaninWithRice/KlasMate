@@ -101,6 +101,7 @@ Route::middleware([
     Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
     Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
     Route::get('/files/{file}/view', [FileController::class, 'view'])->name('files.view');
+    Route::get('/files/{file}/stream', [FileController::class, 'stream'])->name('files.stream');
 
     // Comment Routes
     Route::post('/files/{file}/comments', [CommentController::class, 'store'])->name('comments.store');
@@ -108,9 +109,16 @@ Route::middleware([
     // API Routes
     Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
         $q = $request->query('q');
-        return \App\Models\User::where('name', 'like', "%{$q}%")
-            ->where('id', '!=', auth()->id())
-            ->take(10)
-            ->get();
+        if (!$q) return [];
+        
+        $query = \App\Models\User::where('id', '!=', auth()->id());
+        
+        // Split search terms to match multiple parts of the name
+        $terms = explode(' ', $q);
+        foreach ($terms as $term) {
+            $query->where('name', 'like', "%{$term}%");
+        }
+        
+        return $query->take(10)->get();
     });
 });

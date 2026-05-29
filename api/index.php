@@ -2,7 +2,7 @@
 
 /**
  * Vercel Bridge for Laravel
- * Manually registers essential providers in the correct order.
+ * Manually boots the application and registers providers in a read-only environment.
  */
 
 // 1. Prepare Writable Filesystem
@@ -28,7 +28,7 @@ $_ENV['APP_EVENTS_CACHE'] = '/tmp/storage/framework/cache/events.php';
 $_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
 $_ENV['BOOTSTRAP_CACHE_PATH'] = '/tmp/bootstrap/cache';
 
-// 3. Boot Laravel with Manual Provider Injection
+// 3. Boot Laravel with Controlled Bootstrapping
 try {
     define('LARAVEL_START', microtime(true));
     require __DIR__ . '/../vendor/autoload.php';
@@ -36,14 +36,23 @@ try {
     /** @var \Illuminate\Foundation\Application $app */
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-    // IMPORTANT: The order here matters! Foundational providers first.
+    // Manually run foundational bootstrappers
+    // This sets up config, env, facades, etc.
+    $app->bootstrapWith([
+        \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+        \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+        \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+        \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+    ]);
+
+    // Now that 'config' exists, we can register providers
     $providers = [
         \Illuminate\Filesystem\FilesystemServiceProvider::class,
         \Illuminate\Log\LogServiceProvider::class,
         \Illuminate\Events\EventServiceProvider::class,
-        \Illuminate\Database\DatabaseServiceProvider::class, // Needed for many things
-        \Illuminate\Encryption\EncryptionServiceProvider::class, // Needed for Cookies/Sessions
-        \Illuminate\Cookie\CookieServiceProvider::class, // MUST be before Session
+        \Illuminate\Database\DatabaseServiceProvider::class,
+        \Illuminate\Encryption\EncryptionServiceProvider::class,
+        \Illuminate\Cookie\CookieServiceProvider::class,
         \Illuminate\Session\SessionServiceProvider::class,
         \Illuminate\View\ViewServiceProvider::class,
         \Illuminate\Routing\RoutingServiceProvider::class,

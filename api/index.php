@@ -2,7 +2,7 @@
 
 /**
  * Vercel Bridge for Laravel
- * Manually registers essential providers to bypass read-only filesystem restrictions.
+ * Manually registers essential providers in the correct order.
  */
 
 // 1. Prepare Writable Filesystem
@@ -36,17 +36,17 @@ try {
     /** @var \Illuminate\Foundation\Application $app */
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-    // Manually register core providers that fail to load without packages.php
+    // IMPORTANT: The order here matters! Foundational providers first.
     $providers = [
         \Illuminate\Filesystem\FilesystemServiceProvider::class,
         \Illuminate\Log\LogServiceProvider::class,
         \Illuminate\Events\EventServiceProvider::class,
-        \Illuminate\Routing\RoutingServiceProvider::class,
+        \Illuminate\Database\DatabaseServiceProvider::class, // Needed for many things
+        \Illuminate\Encryption\EncryptionServiceProvider::class, // Needed for Cookies/Sessions
+        \Illuminate\Cookie\CookieServiceProvider::class, // MUST be before Session
         \Illuminate\Session\SessionServiceProvider::class,
-        \Illuminate\Cookie\CookieServiceProvider::class,
         \Illuminate\View\ViewServiceProvider::class,
-        \Illuminate\Encryption\EncryptionServiceProvider::class,
-        \Illuminate\Database\DatabaseServiceProvider::class,
+        \Illuminate\Routing\RoutingServiceProvider::class,
         \Illuminate\Auth\AuthServiceProvider::class,
         \Illuminate\Cache\CacheServiceProvider::class,
         \Illuminate\Pipeline\PipelineServiceProvider::class,

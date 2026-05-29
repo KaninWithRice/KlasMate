@@ -20,8 +20,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (config('app.env') === 'production' || isset($_SERVER['VERCEL_URL'])) {
+        if (isset($_SERVER['VERCEL_URL']) || config('app.env') === 'production') {
             URL::forceScheme('https');
+            
+            // If VERCEL_URL is set, we can use it to force the APP_URL if needed
+            if (isset($_SERVER['VERCEL_URL']) && !str_contains(config('app.url'), 'vercel.app')) {
+                config(['app.url' => 'https://' . $_SERVER['VERCEL_URL']]);
+            }
         }
     }
 }

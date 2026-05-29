@@ -18,12 +18,10 @@
     <!-- Viewer -->
     <div class="flex-1 w-full bg-[#333] relative">
         @if($extension === 'pdf')
-            <object data="{{ $streamUrl }}" type="application/pdf" class="w-full h-full">
-                <iframe src="{{ $streamUrl }}" class="w-full h-full border-none">
-                    <p>Your browser does not support PDFs. <a href="{{ route('files.download', $file) }}">Download instead</a>.</p>
-                </iframe>
-            </object>
+            {{-- Direct Stream for PDF --}}
+            <iframe src="{{ $streamUrl }}" class="w-full h-full border-none" title="{{ $file->name }}"></iframe>
         @elseif(in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+            {{-- Direct Stream for Images --}}
             <div class="w-full h-full flex items-center justify-center p-4">
                 <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl" alt="{{ $file->name }}">
             </div>

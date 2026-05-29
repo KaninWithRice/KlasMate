@@ -43,6 +43,35 @@ Route::get('/cleanup-files', function () {
     }
 });
 
+// TEMPORARY STORAGE TEST ROUTE
+Route::get('/test-storage', function () {
+    try {
+        $disk = \Illuminate\Support\Facades\Storage::disk('s3');
+        $filename = 'test_' . time() . '.txt';
+        $content = 'Supabase Storage Test at ' . now();
+        
+        echo "<h1>Storage Test</h1>";
+        echo "<p>Bucket: " . env('AWS_BUCKET') . "</p>";
+        echo "<p>Endpoint: " . env('AWS_ENDPOINT') . "</p>";
+        
+        echo "<p>Attempting to upload $filename...</p>";
+        if ($disk->put($filename, $content)) {
+            echo "<p style='color:green;'>✅ Upload Successful!</p>";
+            echo "<p>Generated URL: " . $disk->url($filename) . "</p>";
+            echo "<p>Attempting to read back...</p>";
+            echo "<pre>" . $disk->get($filename) . "</pre>";
+            $disk->delete($filename);
+            echo "<p>Cleanup: Deleted test file.</p>";
+        } else {
+            echo "<p style='color:red;'>❌ Upload Failed.</p>";
+        }
+    } catch (\Exception $e) {
+        echo "<p style='color:red;'>❌ FATAL ERROR: " . $e->getMessage() . "</p>";
+        echo "<pre>" . $e->getTraceAsString() . "</pre>";
+    }
+    return "";
+});
+
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');

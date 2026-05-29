@@ -2,8 +2,6 @@
 
 @section('content')
 @php
-    // The user mentioned there is no role-based login yet, so we treat all authenticated users as "owners" 
-    // of the course view to ensure they can see the upload options and header actions.
     $isOwner = auth()->check();
 @endphp
 
@@ -18,33 +16,7 @@
     shareUsers: [],
     sharingFile: { id: '', name: '', link: '' },
     activeFile: { id: '', name: '' },
-    loadingDelete: false,
     
-    async deleteFile() {
-        if (!this.activeFile.id) return;
-        this.loadingDelete = true;
-        try {
-            const response = await fetch('/files/' + this.activeFile.id, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            });
-            if (response.ok) {
-                // Success: remove from UI instantly
-                window.location.reload(); 
-            } else {
-                alert('Delete failed. Please try the Emergency Link.');
-            }
-        } catch (e) {
-            console.error(e);
-            alert('An error occurred.');
-        }
-        this.loadingDelete = false;
-        this.showDeleteModal = false;
-    },
-
     async searchShareUsers() {
         if (this.shareSearch.length < 1) {
             this.shareUsers = [];
@@ -111,20 +83,9 @@
                 <button @click="$dispatch('open-upload-sheet')" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
-                <button @click="openShare({ id: 'folder', name: '{{ $folder->name }}' })" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                <button @click="openShare({ id: 'folder', name: '{{ addslashes($folder->name) }}' })" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
                 </button>
-            </div>
-        @elseif($folder && $folder->user)
-            <div class="flex flex-col items-center">
-                <div class="w-[38px] h-[38px] {{ $folder->color ?? 'bg-[#f5c32f]' }} rounded-full flex items-center justify-center border border-black overflow-hidden shadow-sm">
-                    @if($folder->user->avatar)
-                        <img src="{{ $folder->user->avatar }}" class="w-full h-full object-cover">
-                    @else
-                        <span class="text-[15px] font-bold text-black uppercase">{{ substr($folder->user->name, 0, 1) }}</span>
-                    @endif
-                </div>
-                <p class="text-[10px] font-bold text-black mt-1">{{ $folder->user->name }}</p>
             </div>
         @endif
     </div>
@@ -155,7 +116,7 @@
             <div class="border border-black rounded-[10px] p-4 relative group bg-white shadow-sm"
                  x-show="filter === 'ALL' || (filter === 'IMAGES' && '{{ $file->type }}' === 'image') || (filter === 'PPTX' && '{{ strtolower(pathinfo($file->path, PATHINFO_EXTENSION)) }}' === 'pptx') || (filter === 'DOCX' && '{{ strtolower(pathinfo($file->path, PATHINFO_EXTENSION)) }}' === 'docx') || (filter === 'PDF' && '{{ strtolower(pathinfo($file->path, PATHINFO_EXTENSION)) }}' === 'pdf')">
                 <div class="flex items-start justify-between">
-                    <div class="flex space-x-3" @click="window.location.href='{{ route('files.view', $file) }}'">
+                    <div class="flex space-x-3 cursor-pointer" @click="window.location.href='{{ route('files.view', $file) }}'">
                         <div class="w-7 h-7 flex-shrink-0 text-[#072ac6]">
                             @if($file->type === 'image')
                                 <svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
@@ -180,17 +141,13 @@
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                         </button>
 
-                        <!-- File Options Dropdown -->
                         <div x-show="openFileDropdown === {{ $file->id }}" 
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
                              @click.away="openFileDropdown = null"
                              x-cloak
-                             class="absolute right-0 top-8 z-30 w-[120px] bg-white border-[0.5px] border-[#787878] rounded-[5px] shadow-lg py-1">
+                             class="absolute right-0 top-8 z-30 w-[140px] bg-white border border-black rounded-[5px] shadow-lg py-1">
                             
                             <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="openShare({ id: {{ $file->id }}, name: '{{ $file->name }}' }); openFileDropdown = null">
+                                    @click.stop="openShare({ id: {{ $file->id }}, name: '{{ addslashes($file->name) }}' }); openFileDropdown = null">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                 <span>Share</span>
                             </button>
@@ -200,16 +157,11 @@
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                 <span>Delete</span>
                             </button>
-                            <a href="/files/{{ $file->id }}/force-delete" class="w-full text-left px-3 py-2 text-[11px] flex items-center space-x-2 text-red-400 font-bold bg-red-50 hover:bg-red-100" onclick="return confirm('Force delete this file record now?')">
+
+                            <a href="/files/{{ $file->id }}/force-delete" class="w-full text-left px-3 py-2 text-[10px] flex items-center space-x-2 text-red-400 font-bold bg-red-50 hover:bg-red-100" onclick="return confirm('Force delete this file record now?')">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span>Force Delete</span>
+                                <span>Quick Delete</span>
                             </a>
-                            
-                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="activeFile = { id: {{ $file->id }}, name: '{{ $file->name }}' }; showRenameModal = true; openFileDropdown = null">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                                <span>Rename</span>
-                            </button>
                         </div>
                     </div>
                     @endif
@@ -222,12 +174,6 @@
                         <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <p class="text-[#787878] font-bold text-[19.3px]">Upload a file</p>
-                </div>
-            @else
-                <div class="text-center py-20 border-[2px] border-dashed border-[#787878] rounded-[10px] px-8">
-                    <p class="text-[#787878] font-bold text-[15.4px] leading-relaxed">
-                        This KlasMate hasn't uploaded any files to this course yet.
-                    </p>
                 </div>
             @endif
         @endforelse
@@ -245,7 +191,7 @@
             </div>
             <div>
                 <p class="text-[16px] font-bold text-black">Camera Roll</p>
-                <p class="text-[11.8px] text-[#929292] font-medium">Upload photos from your gallery</p>
+                <p class="text-[11.8px] text-[#929292] font-medium">Photos from gallery</p>
             </div>
             <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
                 @csrf
@@ -273,26 +219,6 @@
     </div>
 </x-bottom-sheet>
 
-<!-- Rename Modal -->
-<div x-show="showRenameModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/70 backdrop-blur-[2px]" x-cloak>
-    <div class="bg-white border border-black rounded-[10px] w-full max-w-[326px] p-6 shadow-2xl">
-        <h2 class="text-[31px] font-bold text-black mb-6 leading-tight">Rename File</h2>
-        <form :action="'/files/' + activeFile.id" method="POST" class="space-y-6">
-            @csrf
-            @method('PUT')
-            <div>
-                <label class="block text-[10.5px] font-bold text-[#787878] mb-1 ml-4 uppercase">Name</label>
-                <input type="text" name="name" x-model="activeFile.name" 
-                    class="w-full px-4 py-2 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[16px] font-medium">
-            </div>
-            <div class="flex space-x-3">
-                <button type="button" @click="showRenameModal = false" class="flex-1 border-[1.5px] border-black py-2 rounded-full font-bold text-[14px]">Cancel</button>
-                <button type="submit" class="flex-1 bg-[#072ac6] text-white py-2 rounded-full font-bold text-[14px]">Rename</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- Share Bottom Sheet -->
 <div x-show="showShareModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
     <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareModal = false"></div>
@@ -301,7 +227,7 @@
         <div class="p-8 pb-12">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
             <h2 class="text-[22.5px] font-bold text-black text-center mb-1 leading-tight">Share a File</h2>
-            <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFile.name + ' | {{ $folder->code }}'"></p>
+            <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFile.name + ' | {{ $folder?->code }}'"></p>
             
             <div class="space-y-6">
                 <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''; searchShareUsers()">
@@ -311,7 +237,7 @@
                         </div>
                         <div class="text-left">
                             <p class="text-[16px] font-bold text-black">Share with a KlasMate</p>
-                            <p class="text-[11.8px] text-[#929292] font-medium">Send to people in your friends list</p>
+                            <p class="text-[11.8px] text-[#929292] font-medium">Send to friends</p>
                         </div>
                     </div>
                     <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -327,7 +253,7 @@
                     <div class="relative">
                         <input type="text" readonly :value="sharingFile.link" 
                             class="w-full bg-[#f0f0f0] border-none rounded-[10px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
-                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:scale-110 transition-transform">
+                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                     </div>
@@ -344,26 +270,19 @@
          :class="showShareToFriends ? 'translate-y-0' : 'translate-y-full'">
         <div class="p-8 pb-12">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
-            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share the file to</h2>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share to friends</h2>
             
-            <!-- Search in Share -->
             <div class="relative mb-6">
                 <input type="text" placeholder="Search friends..." x-model="shareSearch" @input.debounce.300ms="searchShareUsers()"
-                    class="w-full px-4 py-2 border border-[#787878] rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium">
+                    class="w-full px-4 py-2 border border-black rounded-full focus:outline-none text-[12px] font-medium">
             </div>
 
             <div class="space-y-4 max-h-[40vh] overflow-y-auto no-scrollbar">
                 <template x-for="user in shareUsers" :key="user.id">
                     <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
                         <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
-                        <button class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all"
-                                @click="alert('Shared with ' + user.name + '!')">
-                            Send
-                        </button>
+                        <button class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[12px] font-bold" @click="alert('Shared!')">Send</button>
                     </div>
-                </template>
-                <template x-if="shareUsers.length === 0">
-                    <p class="text-center text-[#929292] py-4">Search for friends to share with</p>
                 </template>
             </div>
         </div>
@@ -380,11 +299,10 @@
         <div class="flex flex-col space-y-3">
             <form :action="'/files/' + activeFile.id" method="POST" class="w-full">
                 @csrf
-                @method('DELETE')
+                <input type="hidden" name="_method" value="DELETE">
                 <button type="submit" class="w-full bg-[#f50220] text-white py-3 rounded-full font-bold text-[14px]">Yes, Delete Now</button>
             </form>
             <button type="button" @click="showDeleteModal = false" class="w-full border-[1.5px] border-black py-3 rounded-full font-bold text-[14px]">Cancel</button>
-            <a :href="'/files/' + activeFile.id + '/force-delete'" class="text-[10px] text-gray-400 underline">Emergency Link</a>
         </div>
     </div>
 </div>

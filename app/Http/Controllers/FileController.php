@@ -19,9 +19,10 @@ class FileController extends Controller
 
         $file = $request->file('file');
         
-        // Use the configured disk (public for local, s3 for Supabase/Production)
         $disk = config('filesystems.default');
-        $path = $file->store('reviewers', $disk);
+        
+        // Use the configured disk. If s3, store in bucket root to avoid 'reviewers/reviewers'
+        $path = $file->store('', $disk === 's3' ? 's3' : 'public');
 
         $type = $request->type;
         if (!$type) {
@@ -83,14 +84,19 @@ class FileController extends Controller
         
         $streamUrl = route('files.stream', $file);
         
-        // Fix double-prefix bug: AWS_URL already contains the bucket link
+        // Correctly generate the public URL for Supabase
         $disk = config('filesystems.default');
         if ($disk === 's3') {
             $baseUrl = rtrim(config('filesystems.disks.s3.url'), '/');
-            // The path in DB is 'reviewers/filename.ext'
-            // We just need to append the filename part to the base URL
-            $pathOnly = basename($file->path);
-            $publicUrl = $baseUrl . '/' . $pathOnly;
+            $bucket = config('filesystems.disks.s3.bucket');
+            
+            // Remove the bucket name from the START of the path if it exists
+            $path = ltrim($file->path, '/');
+            if (str_starts_with($path, $bucket . '/')) {
+                $path = substr($path, strlen($bucket) + 1);
+            }
+            
+            $publicUrl = $baseUrl . '/' . $bucket . '/' . $path;
         } else {
             $publicUrl = Storage::url($file->path);
         }

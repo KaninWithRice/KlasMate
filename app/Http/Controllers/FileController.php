@@ -76,8 +76,14 @@ class FileController extends Controller
         $isViewable = in_array($extension, ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp']);
         
         $streamUrl = route('files.stream', $file);
+        
+        // Debugging the public URL for external viewers
+        $publicUrl = Storage::url($file->path);
+        
+        // If we are in debug mode, we can see this in the source
+        echo "<!-- DEBUG: Public URL for Google Viewer: " . $publicUrl . " -->";
 
-        return view('repository.view', compact('file', 'isViewable', 'streamUrl', 'extension'));
+        return view('repository.view', compact('file', 'isViewable', 'streamUrl', 'extension', 'publicUrl'));
     }
 
     public function stream(File $file)

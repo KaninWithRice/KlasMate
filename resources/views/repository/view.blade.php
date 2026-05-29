@@ -29,7 +29,7 @@
             </div>
         @else
             {{-- Office Files and others via Google Docs Viewer --}}
-            <iframe src="https://docs.google.com/viewer?url={{ urlencode(Storage::url($file->path)) }}&embedded=true" 
+            <iframe src="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" 
                 class="w-full h-full border-none bg-white">
             </iframe>
         @endif

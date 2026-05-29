@@ -1,11 +1,12 @@
 <?php
 
+// HEARTBEAT: CONFIRMING SCRIPT EXECUTION
+echo "<div style='background: #f0f0f0; padding: 10px; border: 1px solid #ccc;'>Vercel Bridge Heartbeat: Active (PHP " . PHP_VERSION . ")</div>";
+
 // Enable error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
-echo "<!-- DEPLOYMENT_MARKER: LATEST_V7 -->";
 
 // Ensure writable directories exist in /tmp
 $dirs = [

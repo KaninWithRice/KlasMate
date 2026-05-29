@@ -1,6 +1,11 @@
 <?php
 
-// 1. SILENTLY PREPARE FILESYSTEM
+/**
+ * Vercel Bridge for Laravel
+ * Manually registers essential providers to bypass read-only filesystem restrictions.
+ */
+
+// 1. Prepare Writable Filesystem
 $dirs = [
     '/tmp/storage/framework/views',
     '/tmp/storage/framework/sessions',
@@ -16,27 +21,36 @@ if (!file_exists('/tmp/database.sqlite')) {
     @touch('/tmp/database.sqlite');
 }
 
-// 2. SMOKE TEST (ONLY FOR THE HOME PAGE)
-// This confirms the PHP server is actually working.
-if ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/smoke-test') {
-    // We will still try to boot Laravel, but we'll show this if it fails
-}
+// 2. Set Environment for Vercel
+$_ENV['APP_CONFIG_CACHE'] = '/tmp/storage/framework/cache/config.php';
+$_ENV['APP_ROUTES_CACHE'] = '/tmp/storage/framework/cache/routes.php';
+$_ENV['APP_EVENTS_CACHE'] = '/tmp/storage/framework/cache/events.php';
+$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
+$_ENV['BOOTSTRAP_CACHE_PATH'] = '/tmp/bootstrap/cache';
 
-// 3. BOOT LARAVEL
+// 3. Boot Laravel with Manual Provider Injection
 try {
-    require __DIR__ . '/../public/index.php';
+    // We need to capture the app instance to manually register providers
+    define('LARAVEL_START', microtime(true));
+    require __DIR__ . '/../vendor/autoload.php';
+    
+    /** @var \Illuminate\Foundation\Application $app */
+    $app = require_once __DIR__ . '/../bootstrap/app.php';
+
+    // Manually register core providers that fail to load without packages.php
+    $app->register(\Illuminate\View\ViewServiceProvider::class);
+    $app->register(\Illuminate\Session\SessionServiceProvider::class);
+    $app->register(\Illuminate\Cache\CacheServiceProvider::class);
+    $app->register(\Illuminate\Routing\RoutingServiceProvider::class);
+    $app->register(\Illuminate\Filesystem\FilesystemServiceProvider::class);
+
+    $app->handleRequest(\Illuminate\Http\Request::capture());
+
 } catch (\Throwable $e) {
-    // If Laravel crashes, show a helpful screen
     echo "<div style='font-family:sans-serif; padding:20px; border:5px solid #000; margin:20px;'>";
-    echo "<h1>KlasMate: Deployment Status</h1>";
-    echo "<p style='color:green;'>✅ PHP Server is Running</p>";
-    echo "<p style='color:red;'>❌ Laravel Boot Failed</p>";
-    echo "<hr>";
-    echo "<h3>Error Message:</h3>";
-    echo "<p><code>" . $e->getMessage() . "</code></p>";
-    echo "<h3>Suggested Action:</h3>";
-    if (strpos($e->getMessage(), 'view') !== false) {
-        echo "<p>The <b>view</b> system is failing. This usually means the <code>bootstrap/cache</code> files are missing from GitHub. I will fix this in the next push.</p>";
-    }
+    echo "<h1>KlasMate: Boot Error</h1>";
+    echo "<p style='color:red;'><strong>Message:</strong> " . $e->getMessage() . "</p>";
+    echo "<p><strong>File:</strong> " . $e->getFile() . ":" . $e->getLine() . "</p>";
+    echo "<pre style='background:#eee; padding:10px;'>" . $e->getTraceAsString() . "</pre>";
     echo "</div>";
 }

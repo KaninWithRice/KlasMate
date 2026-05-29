@@ -1,46 +1,27 @@
 <?php
 
-/**
- * Vercel Bridge for Laravel
- * This script handles the read-only filesystem by redirecting storage and cache to /tmp.
- */
-
-// 1. Setup writable directories
-$tmpDirs = [
-    '/tmp/storage/framework/views',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/framework/cache',
-    '/tmp/bootstrap/cache',
-];
-
-foreach ($tmpDirs as $dir) {
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+echo "<h1>Filesystem Check</h1>";
+echo "<p>Checking bootstrap/cache contents...</p>";
+$dir = __DIR__ . '/../bootstrap/cache';
+if (is_dir($dir)) {
+    $files = scandir($dir);
+    echo "<ul>";
+    foreach ($files as $file) {
+        echo "<li>$file</li>";
     }
+    echo "</ul>";
+} else {
+    echo "<p>Directory $dir does not exist.</p>";
 }
 
-// 2. Synchronize bootstrap cache
-// Laravel needs services.php and packages.php to know which providers to load.
-$srcCache = __DIR__ . '/../bootstrap/cache';
-$dstCache = '/tmp/bootstrap/cache';
-
-foreach (['services.php', 'packages.php'] as $file) {
-    if (file_exists("$srcCache/$file")) {
-        copy("$srcCache/$file", "$dstCache/$file");
+echo "<p>Checking if /tmp/bootstrap/cache is writable...</p>";
+if (is_dir('/tmp/bootstrap/cache')) {
+    echo "<p>/tmp/bootstrap/cache exists. Attempting to write...</p>";
+    if (touch('/tmp/bootstrap/cache/test.txt')) {
+        echo "<p>SUCCESS: Wrote to /tmp/bootstrap/cache/test.txt</p>";
+    } else {
+        echo "<p>FAILURE: Could not write to /tmp/bootstrap/cache/test.txt</p>";
     }
+} else {
+    echo "<p>/tmp/bootstrap/cache does not exist.</p>";
 }
-
-// 3. Ensure SQLite database exists
-if (!file_exists('/tmp/database.sqlite')) {
-    touch('/tmp/database.sqlite');
-}
-
-// 4. Force environment variables for Vercel
-// These ensure Laravel uses the writable paths we just created.
-$_ENV['APP_CONFIG_CACHE'] = '/tmp/storage/framework/cache/config.php';
-$_ENV['APP_ROUTES_CACHE'] = '/tmp/storage/framework/cache/routes.php';
-$_ENV['APP_EVENTS_CACHE'] = '/tmp/storage/framework/cache/events.php';
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
-
-// 5. Boot Laravel
-require __DIR__ . '/../public/index.php';

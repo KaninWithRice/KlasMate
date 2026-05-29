@@ -13,9 +13,7 @@
         "BOOTSTRAP_CACHE_PATH": "/tmp/bootstrap/cache",
         "VIEW_COMPILED_PATH": "/tmp",
         "CACHE_STORE": "array",
-        "SESSION_DRIVER": "cookie",
-        "DB_CONNECTION": "sqlite",
-        "DB_DATABASE": "/tmp/database.sqlite"
+        "SESSION_DRIVER": "cookie"
     },
     "routes": [
         {

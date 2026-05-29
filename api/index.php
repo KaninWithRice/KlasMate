@@ -17,9 +17,6 @@ foreach ($dirs as $dir) {
         @mkdir($dir, 0755, true);
     }
 }
-if (!file_exists('/tmp/database.sqlite')) {
-    @touch('/tmp/database.sqlite');
-}
 
 // 2. Set Environment for Vercel
 putenv('APP_CONFIG_CACHE=/tmp/storage/framework/cache/config.php');

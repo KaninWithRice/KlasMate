@@ -23,9 +23,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
 // Vercel Read-Only Filesystem Fix
 if (isset($_SERVER['VERCEL_URL'])) {
     $app->useStoragePath('/tmp/storage');
-    $app->bind('path.bootstrap', function () {
-        return '/tmp/bootstrap';
-    });
+    $app->useBootstrapPath('/tmp/bootstrap');
 }
 
 return $app;

@@ -20,8 +20,8 @@ class FileController extends Controller
         $file = $request->file('file');
         $disk = config('filesystems.default');
         
-        // 🚀 Store in the bucket root or bucket directory
-        $path = $file->store('reviewers', $disk);
+        // 🚀 STORE AT ROOT to avoid 'reviewers/reviewers' path issues
+        $path = $file->store('', $disk);
 
         $type = $request->type;
         if (!$type) {
@@ -69,17 +69,14 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
         
-        // 🚀 OFFICIAL SUPABASE URL BUILDER
-        $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
-        $bucket = env('AWS_BUCKET', 'reviewers');
+        // 🚀 ULTIMATE CLEAN URL BUILDER
+        $projectRef = 'stcuxchsqfeaejpjsfkw';
+        $bucket = 'reviewers';
+        $filename = basename($file->path);
         
-        // Strip bucket name from path if it exists to avoid double prefixing
-        $path = ltrim($file->path, '/');
-        if (str_starts_with($path, $bucket . '/')) {
-            $path = substr($path, strlen($bucket) + 1);
-        }
+        // This is the guaranteed public URL format for Supabase
+        $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
         
-        $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$path}";
         $streamUrl = route('files.stream', $file);
 
         return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
@@ -91,25 +88,19 @@ class FileController extends Controller
 
         $disk = Storage::disk(config('filesystems.default'));
         
-        try {
-            if (!$disk->exists($file->path)) {
-                abort(404, 'File not found in cloud storage.');
-            }
-
-            return response($disk->get($file->path), 200, [
-                'Content-Type' => $disk->mimeType($file->path),
-                'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
-            ]);
-        } catch (\Exception $e) {
-            abort(404, 'Storage error.');
+        if (!$disk->exists($file->path)) {
+            abort(404, 'File not found in cloud storage.');
         }
+
+        return response($disk->get($file->path), 200, [
+            'Content-Type' => $disk->mimeType($file->path),
+            'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
+        ]);
     }
 
     public function update(Request $request, File $file)
     {
-        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized.');
-        }
+        if (!auth()->check()) abort(403);
         $request->validate(['name' => 'required|string|max:255']);
         $file->update(['name' => $request->name]);
         return back()->with('success', 'File renamed successfully!');
@@ -117,15 +108,15 @@ class FileController extends Controller
 
     public function destroy(File $file)
     {
-        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized.');
-        }
+        $folderId = $file->folder_id;
 
+        // FEARLESS DELETE: Always clean up database
         try {
             Storage::disk(config('filesystems.default'))->delete($file->path);
         } catch (\Exception $e) {}
 
         $file->delete();
-        return back()->with('success', 'File deleted successfully!');
+
+        return redirect()->route('repository.index', $folderId)->with('success', 'File deleted.');
     }
 }

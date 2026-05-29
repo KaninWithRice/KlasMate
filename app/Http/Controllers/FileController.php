@@ -125,6 +125,11 @@ class FileController extends Controller
             return back()->with('error', 'You are not the owner of this file!');
         }
 
+        // Delete from cloud storage if it exists
+        if (Storage::exists($file->path)) {
+            Storage::delete($file->path);
+        }
+
         $file->delete();
         return back()->with('success', 'File deleted successfully!');
     }

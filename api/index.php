@@ -30,7 +30,6 @@ $_ENV['BOOTSTRAP_CACHE_PATH'] = '/tmp/bootstrap/cache';
 
 // 3. Boot Laravel with Manual Provider Injection
 try {
-    // We need to capture the app instance to manually register providers
     define('LARAVEL_START', microtime(true));
     require __DIR__ . '/../vendor/autoload.php';
     
@@ -38,11 +37,27 @@ try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 
     // Manually register core providers that fail to load without packages.php
-    $app->register(\Illuminate\View\ViewServiceProvider::class);
-    $app->register(\Illuminate\Session\SessionServiceProvider::class);
-    $app->register(\Illuminate\Cache\CacheServiceProvider::class);
-    $app->register(\Illuminate\Routing\RoutingServiceProvider::class);
-    $app->register(\Illuminate\Filesystem\FilesystemServiceProvider::class);
+    $providers = [
+        \Illuminate\Filesystem\FilesystemServiceProvider::class,
+        \Illuminate\Log\LogServiceProvider::class,
+        \Illuminate\Events\EventServiceProvider::class,
+        \Illuminate\Routing\RoutingServiceProvider::class,
+        \Illuminate\Session\SessionServiceProvider::class,
+        \Illuminate\Cookie\CookieServiceProvider::class,
+        \Illuminate\View\ViewServiceProvider::class,
+        \Illuminate\Encryption\EncryptionServiceProvider::class,
+        \Illuminate\Database\DatabaseServiceProvider::class,
+        \Illuminate\Auth\AuthServiceProvider::class,
+        \Illuminate\Cache\CacheServiceProvider::class,
+        \Illuminate\Pipeline\PipelineServiceProvider::class,
+        \Illuminate\Translation\TranslationServiceProvider::class,
+        \Illuminate\Validation\ValidationServiceProvider::class,
+        \App\Providers\AppServiceProvider::class,
+    ];
+
+    foreach ($providers as $provider) {
+        $app->register($provider);
+    }
 
     $app->handleRequest(\Illuminate\Http\Request::capture());
 

@@ -21,9 +21,10 @@
             {{-- Use Direct Public URL for PDF Iframe --}}
             <iframe src="{{ $publicUrl }}" class="w-full h-full border-none bg-white" title="{{ $file->name }}"></iframe>
         @elseif($isImage)
-            {{-- High Quality Image Display --}}
-            <div class="w-full h-full flex items-center justify-center p-4 bg-[#222]">
-                <img src="{{ $streamUrl }}" class="max-w-full max-h-full object-contain shadow-2xl rounded-lg" alt="{{ $file->name }}">
+            {{-- Integrated Image Display --}}
+            <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#111]">
+                <img src="{{ $publicUrl }}" class="max-w-full max-h-[80vh] object-contain shadow-2xl rounded-lg" alt="{{ $file->name }}">
+                <p class="text-white/40 text-[10px] mt-4 font-mono">{{ $file->name }}</p>
             </div>
         @else
             {{-- Microsoft Office Viewer --}}

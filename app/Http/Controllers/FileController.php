@@ -20,7 +20,7 @@ class FileController extends Controller
         $file = $request->file('file');
         $disk = config('filesystems.default');
         
-        // 🚀 Store directly in bucket root to keep paths simple and clean
+        // Store in root to keep paths simple
         $path = $file->store('', $disk);
 
         $type = $request->type;
@@ -46,30 +46,10 @@ class FileController extends Controller
         return back()->with('success', 'File uploaded successfully.');
     }
 
-    public function show(File $file)
-    {
-        if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $file->load('comments.user', 'user');
-        
-        return view('repository.show', compact('file'));
-    }
-
-    public function download(File $file)
-    {
-        if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        return Storage::download($file->path, $file->name);
-    }
-
     public function view(File $file)
     {
-        // Allow uploader, course owner, or superadmin
-        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
+        // Permission: Uploader OR Course Owner
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
             abort(403);
         }
 
@@ -81,64 +61,45 @@ class FileController extends Controller
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']) || $file->type === 'image';
         $isPDF = $extension === 'pdf';
         
-        // 🚀 FOOLPROOF SUPABASE URL BUILDER
+        $streamUrl = route('files.stream', $file);
+        
+        // 🚀 ULTIMATE SUPABASE URL BUILDER
         $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
         $bucket = env('AWS_BUCKET', 'reviewers');
         $filename = basename($file->path);
         
-        // Generate the official Supabase Public URL structure
+        // Use the official public object URL
         $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
         
-        $streamUrl = route('files.stream', $file);
-
         return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
     }
 
     public function stream(File $file)
     {
-        // 1. Permission Check
-        if ($file->status !== 'approved' && $file->user_id !== auth()->id()) {
-            if ($file->folder->user_id !== auth()->id()) {
-                abort(403);
-            }
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
+            abort(403);
         }
 
-        // 2. Path Validation
-        $path = (string) $file->path;
-        if (empty($path) || $path === '0') {
-            abort(404, 'Invalid file path in database.');
+        $disk = Storage::disk(config('filesystems.default'));
+        
+        if (!$disk->exists($file->path)) {
+            abort(404, 'File not found in cloud storage.');
         }
 
-        try {
-            // 3. Robust Existence Check
-            if (!Storage::disk(config('filesystems.default'))->exists($path)) {
-                abort(404, 'File not found in cloud storage.');
-            }
+        $content = $disk->get($file->path);
+        $mime = $disk->mimeType($file->path) ?: 'application/octet-stream';
 
-            // 4. Direct Content Fetch
-            $content = Storage::disk(config('filesystems.default'))->get($path);
-            if (!$content) {
-                abort(404, 'Could not retrieve file content.');
-            }
-
-            $mime = Storage::disk(config('filesystems.default'))->mimeType($path) ?: 'application/octet-stream';
-
-            return response($content, 200, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-            ]);
-
-        } catch (\Throwable $e) {
-            \Log::error("Storage error for file {$file->id}: " . $e->getMessage());
-            abort(404, 'Storage connection error. Please check your Supabase credentials in Vercel.');
-        }
+        return response($content, 200, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($file->name) . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ]);
     }
 
     public function update(Request $request, File $file)
     {
-        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
-            return back()->with('error', 'You are not authorized to rename this file!');
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized.');
         }
 
         $request->validate(['name' => 'required|string|max:255']);
@@ -148,13 +109,18 @@ class FileController extends Controller
 
     public function destroy(File $file)
     {
-        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id() && !auth()->user()->is_superadmin) {
+        // Course owner or uploader can delete
+        if ($file->user_id !== auth()->id() && $file->folder->user_id !== auth()->id()) {
             return back()->with('error', 'You are not authorized to delete this file!');
         }
 
-        // Delete from cloud storage if it exists
-        if (Storage::exists($file->path)) {
-            Storage::delete($file->path);
+        try {
+            $disk = Storage::disk(config('filesystems.default'));
+            if ($disk->exists($file->path)) {
+                $disk->delete($file->path);
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to delete physical file: " . $e->getMessage());
         }
 
         $file->delete();

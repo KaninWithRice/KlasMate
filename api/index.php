@@ -19,6 +19,16 @@ foreach ($dirs as $dir) {
 }
 
 // 2. Set Environment for Vercel
+$appUrl = getenv('APP_URL') ?: 'https://klas-mate.vercel.app';
+$googleRedirect = getenv('GOOGLE_REDIRECT_URI');
+
+// Manual fix for common interpolation issue
+if (strpos($googleRedirect, '${APP_URL}') !== false) {
+    $googleRedirect = str_replace('${APP_URL}', $appUrl, $googleRedirect);
+    putenv("GOOGLE_REDIRECT_URI=$googleRedirect");
+    $_ENV['GOOGLE_REDIRECT_URI'] = $googleRedirect;
+}
+
 putenv('APP_CONFIG_CACHE=/tmp/storage/framework/cache/config.php');
 putenv('APP_ROUTES_CACHE=/tmp/storage/framework/cache/routes.php');
 putenv('APP_EVENTS_CACHE=/tmp/storage/framework/cache/events.php');

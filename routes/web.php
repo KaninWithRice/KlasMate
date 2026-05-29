@@ -32,6 +32,17 @@ Route::get('/debug-oauth', function () {
     ];
 });
 
+// TEMPORARY CLEANUP ROUTE (Delete after use!)
+Route::get('/cleanup-files', function () {
+    try {
+        $count = \App\Models\File::count();
+        \App\Models\File::truncate(); // This deletes all records
+        return "<h1>Cleanup Successful!</h1><p>Deleted $count file records from the database.</p>";
+    } catch (\Exception $e) {
+        return "<h1>Cleanup Failed!</h1><pre>" . $e->getMessage() . "</pre>";
+    }
+});
+
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');

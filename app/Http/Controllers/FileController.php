@@ -18,16 +18,15 @@ class FileController extends Controller
         ]);
 
         $file = $request->file('file');
-        
         $disk = config('filesystems.default');
         
-        // Use the configured disk. If s3, store in bucket root to avoid 'reviewers/reviewers'
-        $path = $file->store('', $disk === 's3' ? 's3' : 'public');
+        // 🚀 Store directly in bucket root to keep paths simple and clean
+        $path = $file->store('', $disk);
 
         $type = $request->type;
         if (!$type) {
-            $extension = $file->getClientOriginalExtension();
-            if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) {
+            $extension = strtolower($file->getClientOriginalExtension());
+            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) {
                 $type = 'image';
             } else {
                 $type = 'file';
@@ -79,27 +78,18 @@ class FileController extends Controller
             $extension = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
         }
 
-        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']) || $file->type === 'image';
         $isPDF = $extension === 'pdf';
         
-        $streamUrl = route('files.stream', $file);
+        // 🚀 FOOLPROOF SUPABASE URL BUILDER
+        $projectRef = env('AWS_ACCESS_KEY_ID', 'stcuxchsqfeaejpjsfkw');
+        $bucket = env('AWS_BUCKET', 'reviewers');
+        $filename = basename($file->path);
         
-        // Correctly generate the public URL for Supabase
-        $disk = config('filesystems.default');
-        if ($disk === 's3') {
-            $baseUrl = rtrim(config('filesystems.disks.s3.url'), '/');
-            $bucket = config('filesystems.disks.s3.bucket');
-            
-            // Remove the bucket name from the START of the path if it exists
-            $path = ltrim($file->path, '/');
-            if (str_starts_with($path, $bucket . '/')) {
-                $path = substr($path, strlen($bucket) + 1);
-            }
-            
-            $publicUrl = $baseUrl . '/' . $bucket . '/' . $path;
-        } else {
-            $publicUrl = Storage::url($file->path);
-        }
+        // Generate the official Supabase Public URL structure
+        $publicUrl = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
+        
+        $streamUrl = route('files.stream', $file);
 
         return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
     }
@@ -140,10 +130,7 @@ class FileController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            // Log the actual error for the developer in Vercel logs
             \Log::error("Storage error for file {$file->id}: " . $e->getMessage());
-            
-            // Return a clean error message to the user
             abort(404, 'Storage connection error. Please check your Supabase credentials in Vercel.');
         }
     }

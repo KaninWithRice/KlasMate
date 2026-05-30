@@ -2,25 +2,27 @@
 
 @section('content')
 <div class="w-full min-h-screen flex flex-col md:flex-row items-center justify-center bg-[#f0f0f0]">
-    <div class="w-full max-w-[1100px] flex flex-col md:flex-row bg-white overflow-hidden md:rounded-3xl md:shadow-2xl min-h-screen md:min-h-0 md:m-8 border border-black/5">
+    <!-- The "Card" container -->
+    <div class="w-full max-w-[1000px] flex flex-col md:flex-row bg-white overflow-hidden md:rounded-[40px] md:shadow-2xl min-h-screen md:min-h-[600px] md:m-8">
         
         <!-- Left Side: Branding (Desktop Only) -->
-        <div class="hidden md:flex flex-1 bg-[#fcf0cf] flex-col items-center justify-center p-12 text-center border-r border-black/5">
-            <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[220px] h-auto mb-8">
-            <h2 class="text-[48px] font-black text-[#072ac6] leading-tight mb-4 tracking-tighter">KlasMate</h2>
-            <p class="text-[18px] text-[#072ac6]/80 font-medium max-w-sm">Manage your academic courses and files with ease. Connect with KlasMates and share resources.</p>
+        <div class="hidden md:flex flex-1 bg-[#fcf0cf] flex-col items-center justify-center p-12 text-center">
+            <div class="mb-8">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[280px] h-auto">
+            </div>
+            <p class="text-[18px] text-[#072ac6] font-bold max-w-sm leading-tight">Manage your academic courses and files with ease. Connect with KlasMates and share resources.</p>
         </div>
 
         <!-- Right Side: Login Form -->
-        <div class="w-full md:w-[450px] p-8 md:p-16 flex flex-col items-center justify-center bg-white">
+        <div class="w-full md:w-[450px] p-8 md:p-12 flex flex-col items-center justify-center bg-white">
             <!-- Mobile Logo -->
-            <div class="md:hidden mb-6">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[140px] h-auto">
+            <div class="md:hidden mb-8">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[180px] h-auto">
             </div>
 
-            <h1 class="text-[36px] font-bold text-[#072ac6] mb-10 tracking-tight text-center">Hi, KlasMate!</h1>
+            <h1 class="text-[36px] font-black text-[#072ac6] mb-10 tracking-tight text-center">Hi, KlasMate!</h1>
 
-            <form action="/login" method="POST" class="w-full space-y-4">
+            <form action="/login" method="POST" class="w-full space-y-4 max-w-sm">
                 @csrf
                 <!-- Email Field -->
                 <div class="relative">
@@ -52,30 +54,30 @@
 
                 <!-- Forgot Password -->
                 <div class="text-center">
-                    <a href="/forgot-password" class="text-[11px] text-[#072ac6] font-medium underline underline-offset-2">Forgot Password?</a>
+                    <a href="/forgot-password" class="text-[11px] text-[#072ac6] font-bold underline underline-offset-2">Forgot Password?</a>
                 </div>
 
                 <!-- Login Button -->
-                <button type="submit" class="w-full bg-[#072ac6] text-white py-3 rounded-full font-bold text-[15px] hover:bg-[#0624a8] transition-all shadow-md active:scale-95">
+                <button type="submit" class="w-full bg-[#072ac6] text-white py-3 rounded-full font-black text-[15px] hover:bg-[#0624a8] transition-all shadow-lg shadow-[#072ac6]/20 active:scale-95">
                     Login
                 </button>
             </form>
 
             <!-- Divider -->
-            <div class="relative w-full my-8 flex items-center justify-center">
+            <div class="relative w-full max-w-sm my-8 flex items-center justify-center">
                 <div class="absolute inset-x-0 h-[1px] bg-[#072ac6]/30"></div>
-                <span class="relative bg-white px-2 text-[#072ac6] text-[9px] font-medium uppercase">or</span>
+                <span class="relative bg-white px-2 text-[#072ac6] text-[9px] font-bold uppercase tracking-widest">or</span>
             </div>
 
             <!-- Google Login -->
-            <a href="{{ route('google.login') }}" class="w-full flex items-center justify-center space-x-3 bg-[#fcf0cf] py-3 rounded-full font-bold text-[#072ac6] text-[12px] hover:bg-[#fbe7b1] border border-black/10 transition-all active:scale-95">
+            <a href="{{ route('google.login') }}" class="w-full max-w-sm flex items-center justify-center space-x-3 bg-[#fcf0cf] py-3 rounded-full font-bold text-[#072ac6] text-[12px] hover:bg-[#fbe7b1] border border-black/10 transition-all active:scale-95 shadow-sm">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-[16px] h-[16px]">
                 <span>Continue with Google</span>
             </a>
 
             <!-- Sign Up Link -->
-            <div class="text-center mt-10 text-[12px] text-[#072ac6] font-medium">
-                Don't have an account? <a href="/register" class="font-bold underline underline-offset-2">Sign Up</a>
+            <div class="text-center mt-12 text-[12px] text-[#072ac6] font-medium">
+                Don't have an account? <a href="/register" class="font-black underline underline-offset-4 decoration-2">Sign Up</a>
             </div>
         </div>
     </div>

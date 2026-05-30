@@ -20,7 +20,6 @@
     
     async searchShareUsers() {
         if (this.shareSearch.length < 1) {
-            // If search is empty, we could show all friends or keep it empty
             this.shareUsers = [];
             return;
         }
@@ -32,13 +31,20 @@
         }
     },
 
-    openShare(file) {
+    initShare(id, name) {
         this.sharingFile = {
-            id: file.id,
-            name: file.name,
-            link: window.location.origin + '/files/' + file.id
+            id: id,
+            name: name,
+            link: window.location.origin + '/files/' + id
         };
         this.showShareModal = true;
+        this.openFileDropdown = null;
+    },
+
+    initRename(id, name) {
+        this.activeFile = { id: id, name: name };
+        this.showRenameModal = true;
+        this.openFileDropdown = null;
     },
 
     copyShareLink() {
@@ -55,12 +61,8 @@
     },
 
     async sendToFile(user) {
-        // Logic for sharing would go here
         this.sharedUsers.push(user.id);
-        // Simulate a delay or success
-        setTimeout(() => {
-            // Optional: keep the checkmark or reset
-        }, 2000);
+        alert('Shared with ' + user.name);
     }
 }">
     <!-- Navigation Back -->
@@ -94,7 +96,7 @@
                 <button @click="$dispatch('open-upload-sheet')" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
-                <button @click="openShare({ id: 'folder', name: '{{ addslashes($folder->name ?? 'Course') }}' })" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                <button @click="initShare('folder', '{{ addslashes($folder->name ?? 'Course') }}')" class="w-[38px] h-[38px] bg-black text-white rounded-full flex items-center justify-center shadow-sm active:scale-95 transition-transform">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
                 </button>
             </div>
@@ -158,7 +160,7 @@
                              class="absolute right-0 top-8 z-30 w-[140px] bg-white border border-black rounded-[5px] shadow-lg py-1">
                             
                             <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="openShare({ id: {{ $file->id }}, name: '{{ addslashes($file->name) }}' }); openFileDropdown = null">
+                                    @click.stop="initShare({{ $file->id }}, '{{ addslashes($file->name) }}')">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 <span>Share</span>
                             </button>
@@ -169,7 +171,7 @@
                             </a>
 
                             <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="activeFile = { id: {{ $file->id }}, name: '{{ addslashes($file->name) }}' }; showRenameModal = true; openFileDropdown = null">
+                                    @click.stop="initRename({{ $file->id }}, '{{ addslashes($file->name) }}')">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 <span>Rename</span>
                             </button>
@@ -282,7 +284,7 @@
                         </div>
                         <div class="text-left">
                             <p class="text-[16px] font-bold text-black">Share with a KlasMate</p>
-                            <p class="text-[11.8px] text-[#929292] font-medium">Send to people in your friends list</p>
+                            <p class="text-[11.8px] text-[#929292] font-medium">Send to friends</p>
                         </div>
                     </div>
                     <div class="rotate-180">
@@ -301,8 +303,8 @@
                         <p class="absolute -top-2 left-4 bg-white px-1 text-[10.5px] text-[#787878] font-medium uppercase tracking-wider">Link</p>
                         <input type="text" readonly :value="sharingFile.link" 
                             class="w-full border-[0.5px] border-black rounded-[8px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
-                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:scale-110 transition-transform">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H10c-1.103 0-2 .897-2 2v4H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2v-4h4c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2zM4 20V10h10l.002 10H4zm16-6h-4v-4c0-1.103-.897-2-2-2h-4V4h10v10z"/></svg>
+                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                     </div>
                 </div>
@@ -318,7 +320,7 @@
          :class="showShareToFriends ? 'translate-y-0' : 'translate-y-full'">
         <div class="p-8 pb-12">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
-            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share the file to</h2>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share to friends</h2>
             
             <div class="relative mb-6">
                 <input type="text" placeholder="Search friends..." x-model="shareSearch" @input.debounce.300ms="searchShareUsers()"
@@ -341,9 +343,6 @@
                             <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         </div>
                     </div>
-                </template>
-                <template x-if="shareUsers.length === 0">
-                    <p class="text-center text-[#929292] py-10 font-medium">Search for friends to share with</p>
                 </template>
             </div>
         </div>

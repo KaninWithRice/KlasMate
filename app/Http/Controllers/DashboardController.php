@@ -20,13 +20,16 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        // Get all top-level folders joined with visit activity
-        // Sorted by most recently visited first, then by creation date
+        // Get folders owned by user OR visited by user
         $allFolders = Folder::leftJoin('folder_visits', function($join) {
                 $join->on('folders.id', '=', 'folder_visits.folder_id')
                      ->where('folder_visits.user_id', '=', auth()->id());
             })
             ->whereNull('folders.parent_id')
+            ->where(function($query) {
+                $query->where('folders.user_id', auth()->id())
+                      ->orWhereNotNull('folder_visits.visited_at');
+            })
             ->orderByRaw('folder_visits.visited_at DESC NULLS LAST')
             ->orderByDesc('folders.created_at')
             ->select('folders.*', 'folder_visits.visited_at')

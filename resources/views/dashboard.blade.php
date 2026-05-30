@@ -11,6 +11,7 @@
     search: "",
     shareSearch: "",
     friends: @json($friends),
+    sharedUsers: [],
     sharingFolder: { id: "", name: "", link: "" },
     modalData: { id: "", name: "", code: "", semester: "", color: "bg-[#f5c32f]", is_public: 1 },
     colors: ["bg-[#f5c32f]", "bg-[#072ac6]", "bg-[#07a954]", "bg-[#f50220]", "bg-[#ff5aa9]", "bg-[#af78d3]", "bg-[#000000]", "bg-[#ffffff]"],
@@ -98,6 +99,7 @@
                 })
             });
             if (response.ok) {
+                this.sharedUsers.push(user.id);
                 alert("Course shared with " + user.name + " via chat!");
             }
         } catch (e) {
@@ -342,43 +344,42 @@
     </div>
 
     <!-- Share Bottom Sheet -->
-    <div x-show="showShareModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
-        <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareModal = false"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
+    <div x-show="showShareModal" class="fixed inset-0 z-[100] overflow-hidden" x-cloak x-transition>
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="showShareModal = false"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300 transform"
              :class="showShareModal ? 'translate-y-0' : 'translate-y-full'">
-            <div class="p-8 pb-12">
-                <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
-                <h2 class="text-[22.5px] font-bold text-black text-center mb-1 leading-tight">Share a Course Folder</h2>
-                <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFolder.name + ' | Course'"></p>
-                
-                <div class="space-y-6">
-                    <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-[30px] h-[30px] text-black">
-                                <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8zm8 7v2m0 0v2m0-2h2m-2 0h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-[16px] font-bold text-black">Share with a KlasMate</p>
-                                <p class="text-[11.8px] text-[#929292] font-medium">Send to people in your friends list</p>
-                            </div>
+            <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-1 leading-tight">Share a Course</h2>
+            <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFolder.name + ' | Course'"></p>
+            
+            <div class="space-y-6">
+                <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''">
+                    <div class="flex items-center space-x-4 text-left">
+                        <div class="w-[30px] h-[30px] text-black">
+                            <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8zm8 7v2m0 0v2m0-2h2m-2 0h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
-                        <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
+                        <div>
+                            <p class="text-[16px] font-bold text-black">Share with a KlasMate</p>
+                            <p class="text-[11.8px] text-[#929292] font-medium">Send to friends</p>
+                        </div>
+                    </div>
+                    <div class="rotate-180"><svg class="h-[24px] w-[15px] text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg></div>
+                </button>
 
-                    <div class="pt-6 border-t border-[#d9d9d9]">
-                        <div class="flex items-center space-x-4 mb-4">
-                            <div class="w-[30px] h-[30px] text-black">
-                                <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </div>
-                            <p class="text-[16px] font-bold text-black">Share via URL</p>
+                <div class="pt-6 border-t border-[#d9d9d9]">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-[30px] h-[30px] text-black">
+                            <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
                         </div>
-                        <div class="relative">
-                            <input type="text" readonly :value="sharingFolder.link" 
-                                class="w-full bg-[#f0f0f0] border-none rounded-[10px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
-                            <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:scale-110 transition-transform">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                        </div>
+                        <p class="text-[16px] font-bold text-black">Share via URL</p>
+                    </div>
+                    <div class="relative">
+                        <p class="absolute -top-2 left-4 bg-white px-1 text-[10.5px] text-[#787878] font-medium uppercase tracking-wider">Link</p>
+                        <input type="text" readonly :value="sharingFolder.link" 
+                            class="w-full border-[0.5px] border-black rounded-[8px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
+                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -386,40 +387,42 @@
     </div>
 
     <!-- Share to Friends Bottom Sheet -->
-    <div x-show="showShareToFriends" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
-        <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareToFriends = false"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
+    <div x-show="showShareToFriends" class="fixed inset-0 z-[100] overflow-hidden" x-cloak x-transition>
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="showShareToFriends = false"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300 transform"
              :class="showShareToFriends ? 'translate-y-0' : 'translate-y-full'">
-            <div class="p-8 pb-12">
-                <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
-                <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share the course to</h2>
-                
-                <!-- Search in Share -->
-                <div class="relative mb-6">
-                    <input type="text" placeholder="Search friends..." x-model="shareSearch"
-                        class="w-full px-4 py-2 border border-[#787878] rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium">
-                </div>
+            <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share to friends</h2>
+            
+            <!-- Search in Share -->
+            <div class="relative mb-6">
+                <input type="text" placeholder="Search friends..." x-model="shareSearch"
+                    class="w-full px-4 py-2 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium">
+            </div>
 
-                <div class="space-y-4 max-h-[40vh] overflow-y-auto no-scrollbar">
-                    <template x-for="user in filteredShareUsers" :key="user.id">
-                        <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-[40px] h-[40px] bg-[#f5c32f] rounded-full flex items-center justify-center border border-black overflow-hidden shadow-sm">
-                                    <template x-if="user.avatar"><img :src="user.avatar" class="w-full h-full object-cover"></template>
-                                    <template x-if="!user.avatar"><span class="text-[14px] font-bold text-black uppercase" x-text="user.name.charAt(0)"></span></template>
-                                </div>
-                                <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
+            <div class="space-y-4 max-h-[50vh] overflow-y-auto no-scrollbar">
+                <template x-for="user in filteredShareUsers" :key="user.id">
+                    <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-[40px] h-[40px] bg-[#f5c32f] rounded-full flex items-center justify-center border border-black overflow-hidden shadow-sm">
+                                <template x-if="user.avatar"><img :src="user.avatar" class="w-full h-full object-cover"></template>
+                                <template x-if="!user.avatar"><span class="text-[14px] font-bold text-black uppercase" x-text="user.name.charAt(0)"></span></template>
                             </div>
-                            <button class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all"
-                                    @click="sendToChat(user)">
-                                Send
-                            </button>
+                            <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
                         </div>
-                    </template>
-                    <template x-if="filteredShareUsers.length === 0">
-                        <p class="text-center text-[#929292] py-4">No friends found</p>
-                    </template>
-                </div>
+                        <button x-show="!sharedUsers.includes(user.id)" 
+                                class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[11.7px] font-medium active:scale-95 transition-all shadow-sm"
+                                @click="sendToChat(user)">
+                            Send
+                        </button>
+                        <div x-show="sharedUsers.includes(user.id)" class="bg-[#f5c32f] w-[75px] h-[26px] rounded-[16px] flex items-center justify-center">
+                            <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="filteredShareUsers.length === 0">
+                    <p class="text-center text-[#929292] py-4">No friends found</p>
+                </template>
             </div>
         </div>
     </div>

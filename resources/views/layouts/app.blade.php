@@ -19,9 +19,11 @@
     <div class="flex flex-col md:flex-row min-h-screen">
         <!-- Sidebar placeholder for desktop -->
         @auth
-            <div class="hidden md:block w-64 bg-white border-r border-black/10 shrink-0">
-                <x-navigation is-sidebar="true" />
-            </div>
+            @if(!request()->routeIs('login', 'register', 'password.*', 'forgot-password'))
+                <div class="hidden md:block w-64 bg-white border-r border-black/10 shrink-0">
+                    <x-navigation is-sidebar="true" />
+                </div>
+            @endif
         @endauth
 
         <div class="flex-1 w-full bg-white relative overflow-x-hidden min-h-screen">

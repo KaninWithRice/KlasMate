@@ -34,7 +34,7 @@
                                     <p class="text-[10px] text-[#787878] font-medium uppercase tracking-tighter">Course Folder Invite</p>
                                 </div>
                             </div>
-                            <a href="{{ route('repository.index', $msg->folder->id) }}" class="block w-full bg-[#072ac6] text-white text-center py-2 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all">
+                            <a href="{{ route('repository.index', $msg->folder->id) }}{{ !$msg->folder->is_public ? '?token=' . $msg->folder->invite_token : '' }}" class="block w-full bg-[#072ac6] text-white text-center py-2 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all">
                                 Join Course
                             </a>
                         </div>

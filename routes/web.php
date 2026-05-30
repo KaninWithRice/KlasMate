@@ -25,47 +25,18 @@ Route::get('/migrate', function () {
 
 // TEMPORARY USER DEBUG ROUTE
 Route::get('/debug-users', function () {
-    $users = \App\Models\User::all();
-    return [
-        'count' => $users->count(),
-        'current_user_id' => auth()->id(),
-        'users' => $users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email]),
-    ];
-});
-
-// 🚀 PUBLIC SEARCH API
-Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
-    $q = trim($request->query('q', ''));
-    $query = \App\Models\User::query();
-    $currentUserId = auth()->id();
-    
-    if ($currentUserId) {
-        $query->where('id', '!=', $currentUserId);
+    try {
+        $users = \App\Models\User::all();
+        $friends = \App\Models\Friendship::all();
+        return [
+            'users_count' => $users->count(),
+            'friendships_count' => $friends->count(),
+            'current_user_id' => auth()->id(),
+            'users' => $users->map(fn($u) => ['id' => $u->id, 'name' => $u->name]),
+        ];
+    } catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
     }
-    
-    if ($q !== '') {
-        $query->where(function($sub) use ($q) {
-            $term = '%' . strtolower($q) . '%';
-            $sub->whereRaw('LOWER(name) LIKE ?', [$term])
-                ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
-        });
-    }
-    
-    $users = $query->orderBy('name', 'asc')->take(20)->get();
-
-    // Map friendship status for each user
-    return $users->map(function($user) use ($currentUserId) {
-        $friendship = \App\Models\Friendship::where(function($q) use ($currentUserId, $user) {
-            $q->where('user_id', $currentUserId)->where('friend_id', $user->id);
-        })->orWhere(function($q) use ($currentUserId, $user) {
-            $q->where('user_id', $user->id)->where('friend_id', $currentUserId);
-        })->first();
-
-        $user->friend_status = $friendship ? $friendship->status : 'none';
-        // Check if the current user is the one who SENT the request
-        $user->is_requester = $friendship && $friendship->user_id == $currentUserId;
-        return $user;
-    });
 });
 
 Route::get('/login', function () {
@@ -109,6 +80,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
     Route::get('/notifications', function() { 
         $requests = auth()->user()->friendRequests;
         return view('notifications', compact('requests')); 
@@ -119,6 +91,39 @@ Route::middleware(['auth'])->group(function () {
         return view('friends', compact('friends')); 
     })->name('friends');
 
+    // 🚀 NEW SECURE SEARCH API
+    Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
+        $q = trim($request->query('q', ''));
+        $currentId = auth()->id();
+        
+        $query = \App\Models\User::where('id', '!=', $currentId);
+        
+        if ($q !== '') {
+            $query->where(function($sub) use ($q) {
+                $sub->where('name', 'ILIKE', "%{$q}%")
+                    ->orWhere('email', 'ILIKE', "%{$q}%");
+            });
+        }
+        
+        $users = $query->orderBy('name', 'asc')->take(10)->get();
+
+        return $users->map(function($user) use ($currentId) {
+            $friendship = \App\Models\Friendship::where(function($f) use ($currentId, $user) {
+                $f->where('user_id', $currentId)->where('friend_id', $user->id);
+            })->orWhere(function($f) use ($currentId, $user) {
+                $f->where('user_id', $user->id)->where('friend_id', $currentId);
+            })->first();
+
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'avatar' => $user->avatar,
+                'friend_status' => $friendship ? $friendship->status : 'none',
+                'is_requester' => $friendship && $friendship->user_id == $currentId
+            ];
+        });
+    });
+
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
     Route::post('/friends/{user}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
 
@@ -126,7 +131,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/{user?}', function($user = null) { 
         $targetUser = $user ? \App\Models\User::findOrFail($user) : auth()->user();
         
-        // Privacy Check: Only owner or accepted friends can see profiles
         if ($targetUser->id !== auth()->id()) {
             $isFriend = \App\Models\Friendship::where('status', 'accepted')
                 ->where(function($q) use ($targetUser) {

@@ -169,7 +169,7 @@
     <h1 class="text-[31px] font-bold text-black mb-6" x-text="search ? 'Search Results' : 'Courses'"></h1>
 
     <!-- Courses Grid -->
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <template x-for="folder in displayedFolders" :key="folder.id">
             <div class="relative border border-black rounded-[10px] h-[119px] p-3 flex flex-col justify-between shadow-sm group cursor-pointer" 
                  :class="folder.color || 'bg-[#f5c32f]'"

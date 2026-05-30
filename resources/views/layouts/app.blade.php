@@ -15,17 +15,28 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#f0f0f0] md:flex md:justify-center md:items-start min-h-screen">
-    <div class="w-full md:max-w-[390px] min-h-screen bg-white md:shadow-2xl relative overflow-x-hidden mx-auto">
-        @if(session('success'))
-            <x-alert :message="session('success')" type="success" />
-        @endif
+<body class="bg-[#f0f0f0] min-h-screen">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar placeholder for desktop -->
+        @auth
+            <div class="hidden md:block w-64 bg-white border-r border-black/10 shrink-0">
+                <x-navigation is-sidebar="true" />
+            </div>
+        @endauth
 
-        @if(session('error'))
-            <x-alert :message="session('error')" type="error" />
-        @endif
+        <div class="flex-1 w-full bg-white relative overflow-x-hidden min-h-screen">
+            <div class="max-w-[1200px] mx-auto min-h-screen relative">
+                @if(session('success'))
+                    <x-alert :message="session('success')" type="success" />
+                @endif
 
-        @yield('content')
+                @if(session('error'))
+                    <x-alert :message="session('error')" type="error" />
+                @endif
+
+                @yield('content')
+            </div>
+        </div>
     </div>
     <script>
         if ('serviceWorker' in navigator) {

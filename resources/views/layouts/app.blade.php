@@ -25,7 +25,7 @@
         @endauth
 
         <div class="flex-1 w-full bg-white relative overflow-x-hidden min-h-screen">
-            <div class="max-w-[1200px] mx-auto min-h-screen relative">
+            <div class="w-full min-h-screen relative">
                 @if(session('success'))
                     <x-alert :message="session('success')" type="success" />
                 @endif

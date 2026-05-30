@@ -1,18 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="w-full min-h-screen flex flex-col md:flex-row items-center justify-center bg-[#f0f0f0]">
-    <div class="w-full max-w-[1200px] flex flex-col md:flex-row bg-white overflow-hidden md:rounded-3xl md:shadow-2xl min-h-screen md:min-h-0 md:m-8">
-        
-        <!-- Left Side: Mascot/Branding (Desktop Only) -->
-        <div class="hidden md:flex flex-1 bg-[#fcf0cf] flex-col items-center justify-center p-12 text-center">
-            <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[200px] h-auto mb-8">
-            <h2 class="text-[48px] font-black text-[#072ac6] leading-tight mb-4">Join <span class="text-[#f5c32f]">KlasMate!</span></h2>
-            <p class="text-[18px] text-[#072ac6]/80 font-medium max-w-sm">Create your account and start organizing your academic resources today.</p>
-        </div>
+<div class="w-full min-h-screen flex flex-col md:flex-row bg-white">
+    <!-- Left Side: Mascot/Branding (Desktop Only) -->
+    <div class="hidden md:flex flex-1 bg-[#fcf0cf] flex-col items-center justify-center p-12 text-center">
+        <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[250px] h-auto mb-8">
+        <h2 class="text-[64px] font-black text-[#072ac6] leading-tight mb-4">Join <span class="text-[#f5c32f]">KlasMate!</span></h2>
+        <p class="text-[22px] text-[#072ac6]/80 font-medium max-w-lg">Create your account and start organizing your academic resources today.</p>
+    </div>
 
-        <!-- Right Side: Register Form -->
-        <div class="w-full md:w-[550px] p-8 md:p-16 flex flex-col">
+    <!-- Right Side: Register Form -->
+    <div class="w-full md:w-[600px] lg:w-[700px] p-8 md:p-16 lg:p-24 flex flex-col justify-center">
             <!-- Navigation -->
             <div class="w-full mb-8">
                 <a href="/login" class="flex items-center space-x-2 text-[#072ac6] text-[13.72px] font-medium transition-colors">

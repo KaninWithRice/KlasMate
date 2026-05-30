@@ -110,29 +110,42 @@ Route::middleware(['auth'])->group(function () {
         
         if ($q !== '') {
             $query->where(function($sub) use ($q) {
-                $term = '%' . strtolower($q) . '%';
-                $sub->whereRaw('LOWER(name) LIKE ?', [$term])
-                    ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
+                $sub->where('name', 'ILIKE', "%{$q}%")
+                    ->orWhere('email', 'ILIKE', "%{$q}%");
             });
         }
         
         $users = $query->orderBy('name', 'asc')->take(10)->get();
 
-        return $users->map(function($user) use ($currentId) {
-            $friendship = \App\Models\Friendship::where(function($f) use ($currentId, $user) {
-                $f->where('user_id', $currentId)->where('friend_id', $user->id);
-            })->orWhere(function($f) use ($currentId, $user) {
-                $f->where('user_id', $user->id)->where('friend_id', $currentId);
-            })->first();
+        // If searching and no results, let's see if we can find them without the currentId restriction
+        // just to see if that's the issue (for debugging)
+        $debugCount = 0;
+        if ($users->isEmpty() && $q !== '') {
+            $debugCount = \App\Models\User::where('name', 'ILIKE', "%{$q}%")->count();
+        }
 
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'avatar' => $user->avatar,
-                'friend_status' => $friendship ? $friendship->status : 'none',
-                'is_requester' => $friendship && $friendship->user_id == $currentId
-            ];
-        });
+        return [
+            'results' => $users->map(function($user) use ($currentId) {
+                $friendship = \App\Models\Friendship::where(function($f) use ($currentId, $user) {
+                    $f->where('user_id', $currentId)->where('friend_id', $user->id);
+                })->orWhere(function($f) use ($currentId, $user) {
+                    $f->where('user_id', $user->id)->where('friend_id', $currentId);
+                })->first();
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => $user->avatar,
+                    'friend_status' => $friendship ? $friendship->status : 'none',
+                    'is_requester' => $friendship && $friendship->user_id == $currentId
+                ];
+            }),
+            'debug' => [
+                'query' => $q,
+                'count_without_id_restriction' => $debugCount,
+                'total_users_in_db' => \App\Models\User::count()
+            ]
+        ];
     });
 
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');

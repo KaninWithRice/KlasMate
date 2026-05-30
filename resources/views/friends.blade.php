@@ -14,7 +14,9 @@
         this.loading = true;
         try {
             const response = await fetch(`/api/users/search?q=${encodeURIComponent(this.search)}`);
-            this.users = await response.json();
+            const data = await response.json();
+            this.users = data.results || [];
+            console.log('Debug info:', data.debug);
         } catch (e) {
             console.error(e);
         }

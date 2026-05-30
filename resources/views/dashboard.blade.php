@@ -80,6 +80,29 @@
             alert('Invite link copied to clipboard!');
         });
         this.openDropdown = null;
+    },
+
+    async sendToChat(user) {
+        try {
+            const response = await fetch('{{ route('share.send') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    receiver_id: user.id,
+                    type: 'folder',
+                    item_id: this.sharingFolder.id
+                })
+            });
+            if (response.ok) {
+                alert('Course shared with ' + user.name + ' via chat!');
+            }
+        } catch (e) {
+            console.error(e);
+        }
     }
 }">
     <!-- Header -->

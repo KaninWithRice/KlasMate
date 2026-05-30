@@ -9,6 +9,8 @@ use App\Http\Controllers\OtpAuthController;
 use App\Http\Controllers\FriendshipController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\ChatController;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -138,6 +140,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
     Route::post('/friends/{user}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
+
+    // CHAT & SHARING
+    Route::get('/chat/{friend}', [ChatController::class, 'index'])->name('chat');
+    Route::post('/share/send', [ChatController::class, 'share'])->name('share.send');
 
     Route::get('/settings', function() { return view('settings'); })->name('settings');
     Route::get('/profile/{user?}', function($user = null) { 

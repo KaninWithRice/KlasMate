@@ -50,8 +50,27 @@
     },
 
     async sendToFile(user) {
-        this.sharedUsers.push(user.id);
-        alert('Shared with ' + user.name + ' via chat!');
+        try {
+            const response = await fetch('{{ route('share.send') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    receiver_id: user.id,
+                    type: this.sharingFile.id === 'folder' ? 'folder' : 'file',
+                    item_id: this.sharingFile.id === 'folder' ? '{{ $folder->id ?? '' }}' : this.sharingFile.id
+                })
+            });
+            if (response.ok) {
+                this.sharedUsers.push(user.id);
+                alert('Shared with ' + user.name + ' via chat!');
+            }
+        } catch (e) {
+            console.error(e);
+        }
     }
 }">
     <!-- Navigation Back -->

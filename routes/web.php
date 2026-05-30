@@ -152,16 +152,18 @@ Route::middleware([
     // API Routes
     Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
         $q = $request->query('q');
-        if (!$q) return [];
         
         $query = \App\Models\User::where('id', '!=', auth()->id());
         
-        // Split search terms to match multiple parts of the name
-        $terms = explode(' ', $q);
-        foreach ($terms as $term) {
-            $query->where('name', 'like', "%{$term}%");
+        if ($q) {
+            $terms = explode(' ', $q);
+            $query->where(function($sub) use ($terms) {
+                foreach ($terms as $term) {
+                    $sub->orWhere('name', 'like', "%{$term}%");
+                }
+            });
         }
         
-        return $query->take(10)->get();
+        return $query->latest()->take(20)->get();
     });
 });

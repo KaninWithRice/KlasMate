@@ -24,6 +24,18 @@ class DatabaseSeeder extends Seeder
             'is_superadmin' => true,
         ]);
 
+        User::factory()->create([
+            'name' => 'Alexa Smith',
+            'email' => 'alexa@example.com',
+            'password' => bcrypt('password'),
+        ]);
+
+        User::factory()->create([
+            'name' => 'Morco Polo',
+            'email' => 'morco@example.com',
+            'password' => bcrypt('password'),
+        ]);
+
         $folders = [
             ['name' => 'Mathematics', 'color' => 'bg-[#f5c32f]'],
             ['name' => 'Computer Science', 'color' => 'bg-[#072ac6]'],

@@ -11,9 +11,15 @@ class FolderController extends Controller
 {
     public function index(Folder $folder = null)
     {
-        // Access control: if folder is private and user is not owner and no valid token
+        // Access control: if folder is private and user is not owner
         if ($folder && !$folder->is_public && $folder->user_id !== auth()->id()) {
-             if (request('token') !== $folder->invite_token) {
+             // 🚀 CHECK FOR PERMANENT ACCESS: Did they join before?
+             $hasJoined = DB::table('folder_visits')
+                ->where('user_id', auth()->id())
+                ->where('folder_id', $folder->id)
+                ->exists();
+
+             if (!$hasJoined && request('token') !== $folder->invite_token) {
                  abort(403, 'This course is private. You need an invite link to access it.');
              }
         }

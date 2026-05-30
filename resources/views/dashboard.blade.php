@@ -173,7 +173,7 @@
         <template x-for="folder in displayedFolders" :key="folder.id">
             <div class="relative border border-black rounded-[10px] h-[119px] p-3 flex flex-col justify-between shadow-sm group cursor-pointer" 
                  :class="folder.color || 'bg-[#f5c32f]'"
-                 @click="folder.has_access ? window.location.href='/repository/' + folder.id : triggerAlert('This course is private. You need an invite from the owner to join.')">
+                 @click="(folder.has_access || folder.is_public || folder.user_id == currentUserId) ? window.location.href='/repository/' + folder.id : triggerAlert('This course is private. You need an invite from the owner to join.')">
                 
                 <div class="flex justify-between items-start">
                     <div class="flex flex-col">

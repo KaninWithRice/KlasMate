@@ -20,7 +20,6 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        // Get folders owned by user OR visited by user
         $allFolders = Folder::leftJoin('folder_visits', function($join) {
                 $join->on('folders.id', '=', 'folder_visits.folder_id')
                      ->where('folder_visits.user_id', '=', auth()->id());
@@ -33,7 +32,11 @@ class DashboardController extends Controller
             ->orderByRaw('folder_visits.visited_at DESC NULLS LAST')
             ->orderByDesc('folders.created_at')
             ->select('folders.*', 'folder_visits.visited_at')
-            ->get();
+            ->get()
+            ->map(function($f) {
+                $f->has_access = true; // By definition, if it's on your dashboard, you have access
+                return $f;
+            });
 
         $friends = auth()->user()->friends;
 

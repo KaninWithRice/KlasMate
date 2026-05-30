@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rebyu - Academic Repository</title>
+    <title>KlasMate - Academic Repository</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff">
@@ -15,31 +15,38 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#f0f0f0] min-h-screen">
+<body class="bg-white min-h-screen">
     <div class="flex flex-col md:flex-row min-h-screen">
-        <!-- Sidebar placeholder for desktop -->
+        <!-- Sidebar Navigation (Desktop) -->
         @auth
             @if(!request()->routeIs('login', 'register', 'password.*', 'forgot-password'))
-                <div class="hidden md:block w-64 bg-white border-r border-black/10 shrink-0">
+                <div class="hidden md:block w-72 bg-[#fcf0cf] border-r border-black/10 shrink-0">
                     <x-navigation is-sidebar="true" />
                 </div>
             @endif
         @endauth
 
-        <div class="flex-1 w-full bg-white relative overflow-x-hidden min-h-screen">
-            <div class="w-full min-h-screen relative">
-                @if(session('success'))
-                    <x-alert :message="session('success')" type="success" />
-                @endif
+        <!-- Main Content Area -->
+        <div class="flex-1 w-full bg-white relative min-h-screen">
+            @if(session('success'))
+                <x-alert :message="session('success')" type="success" />
+            @endif
 
-                @if(session('error'))
-                    <x-alert :message="session('error')" type="error" />
-                @endif
+            @if(session('error'))
+                <x-alert :message="session('error')" type="error" />
+            @endif
 
-                @yield('content')
-            </div>
+            @yield('content')
         </div>
     </div>
+
+    <!-- Mobile Bottom Navigation -->
+    @auth
+        @if(!request()->routeIs('login', 'register', 'password.*', 'forgot-password'))
+            <x-navigation />
+        @endif
+    @endauth
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

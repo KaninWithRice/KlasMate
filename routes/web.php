@@ -178,9 +178,9 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/login');
     })->name('logout');
 
-    Route::get('/repository/{folder?}', [FolderController::class, 'index'])->name('repository.index');
     Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
     Route::get('/files/{file}/view', [FileController::class, 'view'])->name('files.view');
+    Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
     Route::get('/files/{file}/stream', [FileController::class, 'stream'])->name('files.stream');
     Route::get('/files/{file}/force-delete', [FileController::class, 'destroy'])->name('files.force-delete');
     Route::post('/files', [FileController::class, 'store'])->name('files.store');

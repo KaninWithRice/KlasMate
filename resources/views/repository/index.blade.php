@@ -9,13 +9,12 @@
     filter: 'ALL',
     openFileDropdown: null,
     showRenameModal: false,
-    showDeleteModal: false,
     showShareModal: false,
     showShareToFriends: false,
     shareSearch: '',
     shareUsers: [],
     sharedUsers: [],
-    sharingFile: { id: '', name: '', link: '' },
+    sharingFile: { id: '', name: '', link: '', course: '{{ $folder->code ?? '' }}' },
     activeFile: { id: '', name: '' },
     
     async searchShareUsers() {
@@ -26,23 +25,20 @@
         try {
             const response = await fetch(`/api/users/search?q=${this.shareSearch}`);
             this.shareUsers = await response.json();
-        } catch (e) {
-            console.error(e);
-        }
+        } catch (e) { console.error(e); }
     },
 
     initShare(id, name) {
-        this.sharingFile = {
-            id: id,
-            name: name,
-            link: window.location.origin + '/files/' + id
-        };
+        this.sharingFile.id = id;
+        this.sharingFile.name = name;
+        this.sharingFile.link = window.location.origin + '/files/' + id;
         this.showShareModal = true;
         this.openFileDropdown = null;
     },
 
     initRename(id, name) {
-        this.activeFile = { id: id, name: name };
+        this.activeFile.id = id;
+        this.activeFile.name = name;
         this.showRenameModal = true;
         this.openFileDropdown = null;
     },
@@ -50,13 +46,6 @@
     copyShareLink() {
         navigator.clipboard.writeText(this.sharingFile.link).then(() => {
             alert('Link copied!');
-        });
-    },
-
-    copyInviteLink() {
-        const link = window.location.origin + window.location.pathname + '?token={{ $folder->invite_token ?? '' }}';
-        navigator.clipboard.writeText(link).then(() => {
-            alert('Invite link copied to clipboard!');
         });
     },
 
@@ -160,7 +149,7 @@
                              class="absolute right-0 top-8 z-30 w-[140px] bg-white border border-black rounded-[5px] shadow-lg py-1">
                             
                             <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="initShare({{ $file->id }}, '{{ addslashes($file->name) }}')">
+                                    @click.stop="initShare({{ $file->id }}, {{ json_encode($file->name) }})">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 <span>Share</span>
                             </button>
@@ -171,7 +160,7 @@
                             </a>
 
                             <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100" 
-                                    @click.stop="initRename({{ $file->id }}, '{{ addslashes($file->name) }}')">
+                                    @click.stop="initRename({{ $file->id }}, {{ json_encode($file->name) }})">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 <span>Rename</span>
                             </button>
@@ -191,155 +180,82 @@
             @endif
         @endforelse
     </div>
-</div>
 
-<x-navigation />
-
-<!-- Bottom Sheets -->
-<x-bottom-sheet id="uploadSheet" title="Upload to {{ $folder?->code ?? 'Course' }}" @open-upload-sheet.window="open = true">
-    <div class="space-y-6">
-        <button class="w-full flex items-center space-x-4 group text-left" onclick="document.getElementById('cameraInput').click()">
-            <div class="w-[41px] h-[41px] text-black">
-                <svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            </div>
-            <div>
-                <p class="text-[16px] font-bold text-black">Camera Roll</p>
-                <p class="text-[11.8px] text-[#929292] font-medium">Photos from gallery</p>
-            </div>
-            <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
-                @csrf
-                <input type="hidden" name="folder_id" value="{{ $folder?->id }}">
-                <input type="hidden" name="type" value="image">
-                <input type="file" id="cameraInput" name="file" accept="image/*" onchange="this.form.submit()">
-            </form>
-        </button>
-
-        <button class="w-full flex items-center space-x-4 group text-left" onclick="document.getElementById('fileInput').click()">
-            <div class="w-[38px] h-[38px] text-black">
-                <svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
-            </div>
-            <div>
-                <p class="text-[16px] font-bold text-black">File Picker</p>
-                <p class="text-[11.8px] text-[#929292] font-medium">PDF, PPTX, DOCX</p>
-            </div>
-            <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
-                @csrf
-                <input type="hidden" name="folder_id" value="{{ $folder?->id }}">
-                <input type="hidden" name="type" value="file">
-                <input type="file" id="fileInput" name="file" onchange="this.form.submit()">
-            </form>
-        </button>
-    </div>
-</x-bottom-sheet>
-
-<!-- Rename Bottom Sheet -->
-<div x-show="showRenameModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
-    <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showRenameModal = false"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
-         :class="showRenameModal ? 'translate-y-0' : 'translate-y-full'">
-        <div class="p-8 pb-12">
+    <!-- Rename Bottom Sheet -->
+    <div x-show="showRenameModal" class="fixed inset-0 z-[100] overflow-hidden" x-cloak x-transition>
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="showRenameModal = false"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
             <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Rename a File</h2>
-            
             <form :action="'/files/' + activeFile.id" method="POST" class="space-y-8">
                 @csrf
                 @method('PUT')
                 <div class="relative mt-4">
                     <label class="absolute -top-2 left-4 bg-white px-1 text-[10.5px] text-[#787878] font-medium uppercase tracking-wider">Name</label>
-                    <input type="text" name="name" x-model="activeFile.name" 
+                    <input type="text" name="name" x-model="activeFile.name" required
                         class="w-full px-4 py-3 border-[0.5px] border-black rounded-[8px] focus:outline-none focus:ring-1 focus:ring-black text-[16px] font-medium">
                 </div>
-                
                 <div class="flex space-x-3">
-                    <button type="button" @click="showRenameModal = false" 
-                        class="flex-1 border border-black py-3 rounded-full font-bold text-[16.4px] text-black">
-                        Cancel
-                    </button>
-                    <button type="submit" 
-                        class="flex-1 bg-[#072ac6] text-white py-3 rounded-full font-bold text-[16.4px]">
-                        Rename
-                    </button>
+                    <button type="button" @click="showRenameModal = false" class="flex-1 border border-black py-3 rounded-full font-bold text-[16.4px]">Cancel</button>
+                    <button type="submit" class="flex-1 bg-[#072ac6] text-white py-3 rounded-full font-bold text-[16.4px]">Rename</button>
                 </div>
             </form>
         </div>
     </div>
-</div>
 
-<!-- Share Bottom Sheet -->
-<div x-show="showShareModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
-    <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareModal = false"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
-         :class="showShareModal ? 'translate-y-0' : 'translate-y-full'">
-        <div class="p-8 pb-12">
+    <!-- Share Bottom Sheet -->
+    <div x-show="showShareModal" class="fixed inset-0 z-[100] overflow-hidden" x-cloak x-transition>
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="showShareModal = false"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
             <h2 class="text-[22.5px] font-bold text-black text-center mb-1 leading-tight">Share a File</h2>
-            <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFile.name + ' | {{ $folder->code ?? '' }}'"></p>
-            
+            <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFile.name + ' | ' + sharingFile.course"></p>
             <div class="space-y-6">
-                <!-- Share with KlasMate Button -->
                 <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''; searchShareUsers()">
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-4 text-left">
                         <div class="w-[30px] h-[30px] text-black">
                             <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8zm8 7v2m0 0v2m0-2h2m-2 0h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
-                        <div class="text-left">
+                        <div>
                             <p class="text-[16px] font-bold text-black">Share with a KlasMate</p>
                             <p class="text-[11.8px] text-[#929292] font-medium">Send to friends</p>
                         </div>
                     </div>
-                    <div class="rotate-180">
-                        <svg class="h-[24px] w-[15px] text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg>
-                    </div>
+                    <div class="rotate-180"><svg class="h-[24px] w-[15px] text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/></svg></div>
                 </button>
-
                 <div class="pt-6 border-t border-[#d9d9d9]">
                     <div class="flex items-center space-x-4 mb-4">
-                        <div class="w-[30px] h-[30px] text-black">
-                            <svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                        </div>
+                        <div class="w-[30px] h-[30px] text-black"><svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></div>
                         <p class="text-[16px] font-bold text-black">Share via URL</p>
                     </div>
                     <div class="relative">
                         <p class="absolute -top-2 left-4 bg-white px-1 text-[10.5px] text-[#787878] font-medium uppercase tracking-wider">Link</p>
-                        <input type="text" readonly :value="sharingFile.link" 
-                            class="w-full border-[0.5px] border-black rounded-[8px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
-                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
+                        <input type="text" readonly :value="sharingFile.link" class="w-full border-[0.5px] border-black rounded-[8px] py-3 pl-4 pr-12 text-[12px] font-medium text-black focus:ring-0">
+                        <button @click="copyShareLink()" class="absolute right-3 top-1/2 -translate-y-1/2 text-black"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Share to Friends Bottom Sheet -->
-<div x-show="showShareToFriends" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
-    <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareToFriends = false"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
-         :class="showShareToFriends ? 'translate-y-0' : 'translate-y-full'">
-        <div class="p-8 pb-12">
+    <!-- Share to Friends Bottom Sheet -->
+    <div x-show="showShareToFriends" class="fixed inset-0 z-[100] overflow-hidden" x-cloak x-transition>
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="showShareToFriends = false"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
             <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share to friends</h2>
-            
             <div class="relative mb-6">
                 <input type="text" placeholder="Search friends..." x-model="shareSearch" @input.debounce.300ms="searchShareUsers()"
                     class="w-full px-4 py-2 border border-black rounded-full focus:outline-none text-[12px] font-medium">
             </div>
-
             <div class="space-y-4 max-h-[50vh] overflow-y-auto no-scrollbar">
                 <template x-for="user in shareUsers" :key="user.id">
                     <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
                         <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
-                        
                         <button x-show="!sharedUsers.includes(user.id)" 
                                 class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[11.7px] font-medium active:scale-95 transition-all shadow-sm"
-                                @click="sendToFile(user)">
-                            Send
-                        </button>
-                        
-                        <div x-show="sharedUsers.includes(user.id)" 
-                             class="bg-[#f5c32f] w-[75px] h-[26px] rounded-[16px] flex items-center justify-center">
+                                @click="sendToFile(user)">Send</button>
+                        <div x-show="sharedUsers.includes(user.id)" class="bg-[#f5c32f] w-[75px] h-[26px] rounded-[16px] flex items-center justify-center">
                             <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         </div>
                     </div>
@@ -348,6 +264,27 @@
         </div>
     </div>
 </div>
+
+<x-bottom-sheet id="uploadSheet" title="Upload to {{ $folder?->code ?? 'Course' }}" @open-upload-sheet.window="open = true">
+    <div class="space-y-6">
+        <button class="w-full flex items-center space-x-4 group text-left" onclick="document.getElementById('cameraInput').click()">
+            <div class="w-[41px] h-[41px] text-black"><svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div><p class="text-[16px] font-bold text-black">Camera Roll</p><p class="text-[11.8px] text-[#929292] font-medium">Photos from gallery</p></div>
+            <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
+                @csrf
+                <input type="hidden" name="folder_id" value="{{ $folder?->id }}"><input type="hidden" name="type" value="image"><input type="file" id="cameraInput" name="file" accept="image/*" onchange="this.form.submit()">
+            </form>
+        </button>
+        <button class="w-full flex items-center space-x-4 group text-left" onclick="document.getElementById('fileInput').click()">
+            <div class="w-[38px] h-[38px] text-black"><svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg></div>
+            <div><p class="text-[16px] font-bold text-black">File Picker</p><p class="text-[11.8px] text-[#929292] font-medium">PDF, PPTX, DOCX</p></div>
+            <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
+                @csrf
+                <input type="hidden" name="folder_id" value="{{ $folder?->id }}"><input type="hidden" name="type" value="file"><input type="file" id="fileInput" name="file" onchange="this.form.submit()">
+            </form>
+        </button>
+    </div>
+</x-bottom-sheet>
 
 <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }

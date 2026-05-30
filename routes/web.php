@@ -90,7 +90,23 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-Route::post('/register', function() { return redirect('/login'); });
+Route::post('/register', function (\Illuminate\Http\Request $request) {
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        'password' => ['required', 'string', 'min:8', 'confirmed'],
+    ]);
+
+    $user = \App\Models\User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+    ]);
+
+    auth()->login($user);
+
+    return redirect('/dashboard');
+});
 
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');

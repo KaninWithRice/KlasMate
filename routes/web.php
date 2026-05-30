@@ -95,7 +95,12 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/notifications', function() { return view('notifications'); })->name('notifications');
-    Route::get('/friends', function() { return view('friends'); })->name('friends');
+    Route::get('/friends', function() { 
+        $users = \App\Models\User::where('id', '!=', auth()->id())
+            ->orderBy('name', 'asc')
+            ->get();
+        return view('friends', compact('users')); 
+    })->name('friends');
     Route::get('/settings', function() { return view('settings'); })->name('settings');
     Route::get('/profile/{user?}', function() { return view('profile'); })->name('profile');
     

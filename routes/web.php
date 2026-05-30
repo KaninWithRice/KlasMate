@@ -45,18 +45,14 @@ Route::get('/resetall', function () {
     }
 
     try {
-        // 1. Wipe everything and run migrations fresh
+        // Wipe everything and run migrations fresh (results in 0 users)
         \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
         $migrateOutput = \Illuminate\Support\Facades\Artisan::output();
 
-        // 2. Re-seed the default data (like the test users)
-        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-        $seedOutput = \Illuminate\Support\Facades\Artisan::output();
-
         return "<h1>System Reset Successful!</h1>
+                <p>The database has been wiped. There are now <b>0 users</b> in the system.</p>
                 <h3>Migration Output:</h3><pre>$migrateOutput</pre>
-                <h3>Seeder Output:</h3><pre>$seedOutput</pre>
-                <p><a href='/login'>Go to Login</a></p>";
+                <p><a href='/register'>Create First Account</a></p>";
     } catch (\Exception $e) {
         return "<h1>Reset Failed!</h1><pre>" . $e->getMessage() . "</pre>";
     }

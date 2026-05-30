@@ -12,7 +12,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// TEMPORARY MIGRATION ROUTE (Delete this after use!)
+// TEMPORARY MIGRATION ROUTE
 Route::get('/migrate', function () {
     try {
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
@@ -20,32 +20,6 @@ Route::get('/migrate', function () {
     } catch (\Exception $e) {
         return "<h1>Migration Failed!</h1><pre>" . $e->getMessage() . "</pre>";
     }
-});
-
-// TEMPORARY OAUTH DEBUG ROUTE
-Route::get('/debug-oauth', function () {
-    return [
-        'APP_URL' => config('app.url'),
-        'GOOGLE_REDIRECT_URI' => config('services.google.redirect'),
-        'SOCIALITE_REDIRECT_URL' => url('/auth/google/callback'),
-        'ACTUAL_REDIRECT_URI_SENT_TO_GOOGLE' => Socialite::driver('google')->getRedirectGenerationUrl(),
-    ];
-});
-
-// TEMPORARY CLEANUP ROUTE (Delete after use!)
-Route::get('/cleanup-files', function () {
-    try {
-        $count = \App\Models\File::count();
-        \App\Models\File::truncate(); // This deletes all records
-        return "<h1>Cleanup Successful!</h1><p>Deleted $count file records from the database.</p>";
-    } catch (\Exception $e) {
-        return "<h1>Cleanup Failed!</h1><pre>" . $e->getMessage() . "</pre>";
-    }
-});
-
-// TEMPORARY STORAGE TEST ROUTE
-Route::get('/test-storage', function () {
-    // ... existing storage test code ...
 });
 
 // TEMPORARY USER DEBUG ROUTE
@@ -56,6 +30,26 @@ Route::get('/debug-users', function () {
         'current_user_id' => auth()->id(),
         'users' => $users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email]),
     ];
+});
+
+// 🚀 PUBLIC SEARCH API (Top level for maximum reliability)
+Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
+    $q = trim($request->query('q', ''));
+    $query = \App\Models\User::query();
+    
+    if (auth()->check()) {
+        $query->where('id', '!=', auth()->id());
+    }
+    
+    if ($q !== '') {
+        $query->where(function($sub) use ($q) {
+            // Case-insensitive matching for both name and email
+            $sub->where('name', 'ILIKE', "%{$q}%")
+                ->orWhere('email', 'ILIKE', "%{$q}%");
+        });
+    }
+    
+    return $query->latest()->take(20)->get();
 });
 
 Route::get('/login', function () {
@@ -72,57 +66,38 @@ Route::post('/register', function (\Illuminate\Http\Request $request) {
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
         'password' => ['required', 'string', 'min:8', 'confirmed'],
     ]);
-
     $user = \App\Models\User::create([
         'name' => $request->name,
         'email' => $request->email,
         'password' => \Illuminate\Support\Facades\Hash::make($request->password),
     ]);
-
     auth()->login($user);
-
     return redirect('/dashboard');
 });
-
-Route::get('/forgot-password', function () {
-    return view('auth.forgot-password');
-})->name('password.request');
 
 Route::post('/login', function (\Illuminate\Http\Request $request) {
     $credentials = $request->validate([
         'email' => ['required', 'email'],
         'password' => ['required'],
     ]);
-
     if (auth()->attempt($credentials)) {
         $request->session()->regenerate();
         return redirect()->intended('dashboard');
     }
-
-    return back()->withErrors([
-        'email' => 'The provided credentials do not match our records.',
-    ])->onlyInput('email');
+    return back()->withErrors(['email' => 'The provided credentials do not match our records.'])->onlyInput('email');
 });
 
-// Google Authentication Routes
+// Auth Routes
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.login');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 
-// OTP Password Recovery Routes
-Route::post('/forgot-password/send', [OtpAuthController::class, 'sendOtp'])->name('password.otp.send');
-Route::post('/forgot-password/verify', [OtpAuthController::class, 'verifyOtp'])->name('password.otp.verify');
-
-Route::middleware([
-    'auth',
-])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/notifications', function() { return view('notifications'); })->name('notifications');
     Route::get('/friends', function() { return view('friends'); })->name('friends');
     Route::get('/settings', function() { return view('settings'); })->name('settings');
     Route::get('/profile/{user?}', function() { return view('profile'); })->name('profile');
-    Route::put('/profile/update', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/password/update', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password.update');
-
+    
     Route::post('/logout', function () {
         auth()->logout();
         request()->session()->invalidate();
@@ -130,47 +105,11 @@ Route::middleware([
         return redirect('/login');
     })->name('logout');
 
-    // Folder & Repository Routes
     Route::get('/repository/{folder?}', [FolderController::class, 'index'])->name('repository.index');
     Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
-    Route::put('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
-    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
-
-    // File Routes
-    Route::post('/files', [FileController::class, 'store'])->name('files.store');
-    Route::get('/files/{file}', [FileController::class, 'show'])->name('files.show');
-    Route::put('/files/{file}', [FileController::class, 'update'])->name('files.update');
-    Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
-    Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
     Route::get('/files/{file}/view', [FileController::class, 'view'])->name('files.view');
     Route::get('/files/{file}/stream', [FileController::class, 'stream'])->name('files.stream');
     Route::get('/files/{file}/force-delete', [FileController::class, 'destroy'])->name('files.force-delete');
-
-    // Comment Routes
-    Route::post('/files/{file}/comments', [CommentController::class, 'store'])->name('comments.store');
-
-    // API Routes
-    Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
-        $q = trim($request->query('q', ''));
-        $currentUserId = auth()->id();
-        
-        $query = \App\Models\User::query();
-        
-        // Always exclude current user
-        if ($currentUserId) {
-            $query->where('id', '!=', $currentUserId);
-        }
-        
-        if ($q !== '') {
-            // Very fuzzy search: match name OR email
-            $query->where(function($sub) use ($q) {
-                $sub->where('name', 'ilike', "%{$q}%")
-                    ->orWhere('email', 'ilike', "%{$q}%");
-            });
-        }
-        
-        $users = $query->take(20)->get();
-        
-        return $users;
-    });
+    Route::post('/files', [FileController::class, 'store'])->name('files.store');
+    Route::put('/files/{file}', [FileController::class, 'update'])->name('files.update');
 });

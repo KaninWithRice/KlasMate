@@ -15,8 +15,8 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#f0f0f0] flex justify-center items-start min-h-screen">
-    <div class="w-full max-w-[390px] min-h-screen bg-white shadow-2xl relative overflow-x-hidden">
+<body class="bg-[#f0f0f0] md:flex md:justify-center md:items-start min-h-screen">
+    <div class="w-full md:max-w-[390px] min-h-screen bg-white md:shadow-2xl relative overflow-x-hidden mx-auto">
         @if(session('success'))
             <x-alert :message="session('success')" type="success" />
         @endif

@@ -26,10 +26,13 @@
         }
         this.loading = true;
         try {
-            const response = await fetch(`/api/users/search?q=${this.search}`);
+            const response = await fetch(`/api/users/search?q=${encodeURIComponent(this.search)}`);
+            if (!response.ok) throw new Error('Search failed');
             this.users = await response.json();
+            console.log('Found users:', this.users.length);
         } catch (e) {
-            console.error(e);
+            console.error('Search error:', e);
+            this.users = [];
         }
         this.loading = false;
     }

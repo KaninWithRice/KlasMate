@@ -165,8 +165,8 @@ Route::middleware(['auth'])->group(function () {
                     'name' => $folder->name,
                     'code' => $folder->code,
                     'color' => $folder->color,
-                    'is_public' => $folder->is_public,
-                    'has_access' => $hasAccess,
+                    'is_public' => (bool)$folder->is_public,
+                    'has_access' => (bool)$hasAccess,
                     'user_id' => $folder->user_id
                 ];
             })

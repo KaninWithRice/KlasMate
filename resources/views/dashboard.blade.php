@@ -7,6 +7,8 @@
     showDeleteModal: false,
     showShareModal: false,
     showShareToFriends: false,
+    showCustomAlert: false,
+    alertMessage: "",
     isEdit: false,
     search: "",
     shareSearch: "",
@@ -18,6 +20,12 @@
     colors: ["bg-[#f5c32f]", "bg-[#072ac6]", "bg-[#07a954]", "bg-[#f50220]", "bg-[#ff5aa9]", "bg-[#af78d3]", "bg-[#000000]", "bg-[#ffffff]"],
     allFolders: {{ $allFolders->toJson() }},
     currentUserId: {{ auth()->id() }},
+
+    triggerAlert(msg) {
+        this.alertMessage = msg;
+        this.showCustomAlert = true;
+        setTimeout(() => this.showCustomAlert = false, 4000);
+    },
 
     async searchCourses() {
         if (!this.search) {
@@ -34,7 +42,11 @@
     },
 
     get displayedFolders() {
-        return this.search ? this.searchResults : this.allFolders.slice(0, 6);
+        if (this.search) {
+            return this.searchResults;
+        }
+        // Local filtering for own courses
+        return this.allFolders.slice(0, 6);
     },
 
     get filteredShareUsers() {
@@ -54,7 +66,7 @@
 
     copyShareLink() {
         navigator.clipboard.writeText(this.sharingFolder.link).then(() => {
-            alert("Link copied!");
+            this.triggerAlert("Link copied!");
         });
     },
 
@@ -84,7 +96,7 @@
     copyInviteLink(folder) {
         const link = window.location.origin + "/repository/" + folder.id + "?token=" + folder.invite_token;
         navigator.clipboard.writeText(link).then(() => {
-            alert("Invite link copied to clipboard!");
+            this.triggerAlert("Invite link copied to clipboard!");
         });
         this.openDropdown = null;
     },
@@ -106,13 +118,26 @@
             });
             if (response.ok) {
                 this.sharedUsers.push(user.id);
-                alert("Course shared with " + user.name + " via chat!");
+                this.triggerAlert("Course shared with " + user.name + " via chat!");
             }
         } catch (e) {
             console.error(e);
         }
     }
 }'>
+    <!-- Custom Yellow Alert UI -->
+    <template x-if="showCustomAlert">
+        <div class="fixed top-20 left-1/2 -translate-x-1/2 w-[340px] bg-[#f5c32f] border-[1.5px] border-black rounded-[15px] p-8 shadow-2xl z-[200] flex flex-col items-center text-center animate-fade-in-down" x-cloak>
+            <button @click="showCustomAlert = false" class="absolute top-4 right-4 text-black hover:opacity-70">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="w-24 h-16 mb-6">
+                <img src="{{ asset('images/message-popup.png') }}" class="w-full h-full object-contain">
+            </div>
+            <h2 class="font-black text-[22px] text-black leading-tight tracking-tight" x-text="alertMessage"></h2>
+        </div>
+    </template>
+
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
         <div class="flex items-center space-x-4">
@@ -148,7 +173,7 @@
         <template x-for="folder in displayedFolders" :key="folder.id">
             <div class="relative border border-black rounded-[10px] h-[119px] p-3 flex flex-col justify-between shadow-sm group cursor-pointer" 
                  :class="folder.color || 'bg-[#f5c32f]'"
-                 @click="folder.has_access ? window.location.href='/repository/' + folder.id : alert('This course is private. You need an invite from the owner to join.')">
+                 @click="folder.has_access ? window.location.href='/repository/' + folder.id : triggerAlert('This course is private. You need an invite from the owner to join.')">
                 
                 <div class="flex justify-between items-start">
                     <div class="flex flex-col">
@@ -156,10 +181,11 @@
                            :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'"
                            x-text="folder.name"></p>
                         
-                        <template x-if="!folder.is_public">
+                        <!-- Show Private label ONLY if is_public is false/0 -->
+                        <template x-if="folder.is_public == false || folder.is_public == 0">
                             <div class="mt-1 flex items-center space-x-1">
                                 <svg class="w-3 h-3 opacity-60" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2m-6-8a3 3 0 0 1 3 3v2H9V5a3 3 0 0 1 3-3z"/>
+                                    <path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2m-6-8a3 3 0 0 1 3 3v2H9V5a3 3 0 1 3-3z"/>
                                 </svg>
                                 <span class="text-[8px] opacity-60 font-bold uppercase" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" x-text="folder.has_access ? 'Private' : 'Invite Only'"></span>
                             </div>
@@ -431,4 +457,14 @@
         return haystack && haystack.includes(needle);
     }
 </script>
+
+<style>
+    @keyframes fade-in-down {
+        0% { opacity: 0; transform: translate(-50%, -20px); }
+        100% { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .animate-fade-in-down {
+        animation: fade-in-down 0.3s ease-out;
+    }
+</style>
 @endsection

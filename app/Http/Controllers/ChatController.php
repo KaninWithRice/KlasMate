@@ -50,4 +50,20 @@ class ChatController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Shared successfully!']);
     }
+
+    public function store(Request $request, User $friend)
+    {
+        $request->validate([
+            'message' => 'required|string'
+        ]);
+
+        Message::create([
+            'sender_id' => auth()->id(),
+            'receiver_id' => $friend->id,
+            'message' => $request->message,
+            'type' => 'text'
+        ]);
+
+        return back();
+    }
 }

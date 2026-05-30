@@ -144,6 +144,7 @@ Route::middleware(['auth'])->group(function () {
 
     // CHAT & SHARING
     Route::get('/chat/{friend}', [ChatController::class, 'index'])->name('chat');
+    Route::post('/chat/{friend}', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/share/send', [ChatController::class, 'share'])->name('share.send');
 
     Route::get('/settings', function() { return view('settings'); })->name('settings');

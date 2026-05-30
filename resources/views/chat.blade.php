@@ -74,8 +74,9 @@
 
     <!-- Message Input -->
     <div class="p-6 bg-white border-t border-black pb-10">
-        <form @submit.prevent="alert('Text messaging coming soon!')" class="flex items-center space-x-3">
-            <input type="text" placeholder="Type a message..." 
+        <form action="{{ route('chat.store', $friend->id) }}" method="POST" class="flex items-center space-x-3">
+            @csrf
+            <input type="text" name="message" placeholder="Type a message..." required
                 class="flex-1 bg-[#f0f0f0] border-none rounded-full py-3 px-6 text-[14px] font-medium text-black focus:ring-1 focus:ring-black">
             <button type="submit" class="w-[45px] h-[45px] bg-black text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>

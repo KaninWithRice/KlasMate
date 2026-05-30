@@ -102,7 +102,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('friends');
 
     // 🚀 NEW SECURE SEARCH API
-    Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
+    Route::get('/friends/search', function (\Illuminate\Http\Request $request) {
         $q = trim($request->query('q', ''));
         $currentId = auth()->id();
         
@@ -116,13 +116,6 @@ Route::middleware(['auth'])->group(function () {
         }
         
         $users = $query->orderBy('name', 'asc')->take(10)->get();
-
-        // If searching and no results, let's see if we can find them without the currentId restriction
-        // just to see if that's the issue (for debugging)
-        $debugCount = 0;
-        if ($users->isEmpty() && $q !== '') {
-            $debugCount = \App\Models\User::where('name', 'ILIKE', "%{$q}%")->count();
-        }
 
         return [
             'results' => $users->map(function($user) use ($currentId) {
@@ -139,12 +132,7 @@ Route::middleware(['auth'])->group(function () {
                     'friend_status' => $friendship ? $friendship->status : 'none',
                     'is_requester' => $friendship && $friendship->user_id == $currentId
                 ];
-            }),
-            'debug' => [
-                'query' => $q,
-                'count_without_id_restriction' => $debugCount,
-                'total_users_in_db' => \App\Models\User::count()
-            ]
+            })
         ];
     });
 

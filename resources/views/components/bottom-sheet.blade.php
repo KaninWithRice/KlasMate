@@ -1,6 +1,10 @@
 @props(['id', 'title', 'subtitle' => null])
 
-<div id="{{ $id }}" {{ $attributes->merge(['class' => 'fixed inset-0 z-50 overflow-hidden']) }} x-data="{ open: false }" x-show="open" x-cloak>
+<div id="{{ $id }}" {{ $attributes->merge(['class' => 'fixed inset-0 z-50 overflow-hidden']) }} 
+    x-data="{ open: false }" 
+    x-show="open" 
+    @open-{{ Str::kebab($id) }}.window="open = true"
+    x-cloak>
     <!-- Backdrop -->
     <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="open = false"></div>
     

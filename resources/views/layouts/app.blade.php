@@ -27,7 +27,7 @@
         @endauth
 
         <!-- Main Content Area -->
-        <div class="flex-1 w-full bg-white relative min-h-screen">
+        <div class="flex-1 w-full relative min-h-screen">
             @if(session('success'))
                 <x-alert :message="session('success')" type="success" />
             @endif

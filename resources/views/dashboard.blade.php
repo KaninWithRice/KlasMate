@@ -12,23 +12,29 @@
     shareSearch: "",
     friends: @json($friends),
     sharedUsers: [],
+    searchResults: [],
     sharingFolder: { id: "", name: "", link: "" },
     modalData: { id: "", name: "", code: "", semester: "", color: "bg-[#f5c32f]", is_public: 1 },
     colors: ["bg-[#f5c32f]", "bg-[#072ac6]", "bg-[#07a954]", "bg-[#f50220]", "bg-[#ff5aa9]", "bg-[#af78d3]", "bg-[#000000]", "bg-[#ffffff]"],
     allFolders: {{ $allFolders->toJson() }},
     currentUserId: {{ auth()->id() }},
 
-    get filteredFolders() {
-        let folders = this.allFolders;
-        if (this.search) {
-            folders = folders.filter(f => 
-                f.name.toLowerCase().includes(this.search.toLowerCase()) || 
-                (f.code && f.code.toLowerCase().includes(this.search.toLowerCase()))
-            );
-        } else {
-            folders = folders.slice(0, 6);
+    async searchCourses() {
+        if (!this.search) {
+            this.searchResults = [];
+            return;
         }
-        return folders;
+        try {
+            const response = await fetch("/courses/search?q=" + encodeURIComponent(this.search));
+            const data = await response.json();
+            this.searchResults = data.results;
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    get displayedFolders() {
+        return this.search ? this.searchResults : this.allFolders.slice(0, 6);
     },
 
     get filteredShareUsers() {
@@ -130,7 +136,7 @@
         <span class="absolute inset-y-0 left-4 flex items-center text-[#787878]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
-        <input type="text" placeholder="Search Course Name or Code" x-model="search"
+        <input type="text" placeholder="Search Course Name or Code" x-model="search" @input.debounce.300ms="searchCourses"
             class="w-full pl-12 pr-4 py-2.5 border border-black rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium text-black placeholder-black/50 shadow-sm">
     </div>
 
@@ -139,10 +145,10 @@
 
     <!-- Courses Grid -->
     <div class="grid grid-cols-2 gap-4">
-        <template x-for="folder in filteredFolders" :key="folder.id">
+        <template x-for="folder in displayedFolders" :key="folder.id">
             <div class="relative border border-black rounded-[10px] h-[119px] p-3 flex flex-col justify-between shadow-sm group cursor-pointer" 
                  :class="folder.color || 'bg-[#f5c32f]'"
-                 @click="window.location.href='/repository/' + folder.id">
+                 @click="folder.has_access ? window.location.href='/repository/' + folder.id : alert('This course is private. You need an invite from the owner to join.')">
                 
                 <div class="flex justify-between items-start">
                     <div class="flex flex-col">
@@ -155,18 +161,20 @@
                                 <svg class="w-3 h-3 opacity-60" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2m-6-8a3 3 0 0 1 3 3v2H9V5a3 3 0 0 1 3-3z"/>
                                 </svg>
-                                <span class="text-[8px] opacity-60 font-bold uppercase" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'">Private</span>
+                                <span class="text-[8px] opacity-60 font-bold uppercase" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" x-text="folder.has_access ? 'Private' : 'Invite Only'"></span>
                             </div>
                         </template>
                     </div>
                     
-                    <!-- 3-Dot Menu Trigger -->
-                    <button class="relative z-10 p-1 -mr-1 hover:bg-black/10 rounded-full transition-colors" 
-                            @click.stop="openDropdown = (openDropdown === folder.id ? null : folder.id)">
-                        <svg class="w-4 h-4" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                        </svg>
-                    </button>
+                    <!-- 3-Dot Menu Trigger (Only show if owner) -->
+                    <template x-if="folder.user_id === currentUserId">
+                        <button class="relative z-10 p-1 -mr-1 hover:bg-black/10 rounded-full transition-colors" 
+                                @click.stop="openDropdown = (openDropdown === folder.id ? null : folder.id)">
+                            <svg class="w-4 h-4" :class="in_array(folder.color, ['bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#000000]']) ? 'text-white' : 'text-black'" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </button>
+                    </template>
 
                     <!-- Dropdown Menu -->
                     <div x-show="openDropdown === folder.id" 
@@ -182,21 +190,17 @@
                             <span>Share</span>
                         </button>
                         
-                        <template x-if="folder.user_id === currentUserId">
-                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 text-red-600 hover:bg-gray-100" 
-                                    @click.stop="confirmDelete(folder)">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                                <span>Delete</span>
-                            </button>
-                        </template>
+                        <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 text-red-600 hover:bg-gray-100" 
+                                @click.stop="confirmDelete(folder)">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span>Delete</span>
+                        </button>
                         
-                        <template x-if="folder.user_id === currentUserId">
-                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" 
-                                    @click.stop="openEditModal(folder)">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                                <span>Edit</span>
-                            </button>
-                        </template>
+                        <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" 
+                                @click.stop="openEditModal(folder)">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span>Edit</span>
+                        </button>
                     </div>
                 </div>
 
@@ -225,7 +229,7 @@
         </div>
 
         <!-- No Results -->
-        <template x-if="search && filteredFolders.length === 0">
+        <template x-if="search && displayedFolders.length === 0">
             <div class="col-span-2 py-10 text-center border-2 border-dashed border-[#787878] rounded-[10px]">
                 <p class="text-[#787878] font-bold text-[15.4px]">No courses found matching "<span x-text="search"></span>"</p>
             </div>

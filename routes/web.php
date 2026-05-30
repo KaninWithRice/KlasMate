@@ -139,6 +139,40 @@ Route::middleware(['auth'])->group(function () {
         ];
     });
 
+    Route::get('/courses/search', function (\Illuminate\Http\Request $request) {
+        $q = trim($request->query('q', ''));
+        $currentId = auth()->id();
+
+        if ($q === '') return ['results' => []];
+
+        $folders = \App\Models\Folder::whereNull('parent_id')
+            ->where(function($query) use ($q) {
+                $query->where('name', 'ILIKE', "%{$q}%")
+                      ->orWhere('code', 'ILIKE', "%{$q}%");
+            })
+            ->take(10)
+            ->get();
+
+        return [
+            'results' => $folders->map(function($folder) use ($currentId) {
+                // Check if user has access
+                $hasAccess = $folder->is_public 
+                    || $folder->user_id === $currentId 
+                    || \DB::table('folder_visits')->where('user_id', $currentId)->where('folder_id', $folder->id)->exists();
+
+                return [
+                    'id' => $folder->id,
+                    'name' => $folder->name,
+                    'code' => $folder->code,
+                    'color' => $folder->color,
+                    'is_public' => $folder->is_public,
+                    'has_access' => $hasAccess,
+                    'user_id' => $folder->user_id
+                ];
+            })
+        ];
+    });
+
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
     Route::post('/friends/{user}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
 

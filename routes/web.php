@@ -36,6 +36,32 @@ Route::get('/seed', function () {
     }
 });
 
+// ⚠️ EMERGENCY RESET ROUTE (Delete everything and start fresh)
+Route::get('/resetall', function () {
+    // Safety check: Require a ?confirm=true parameter to prevent accidental clicks
+    if (request('confirm') !== 'true') {
+        return "<h1>Warning: This will delete ALL users, courses, files, and messages!</h1>
+                <p>To proceed, visit: <a href='/resetall?confirm=true'>/resetall?confirm=true</a></p>";
+    }
+
+    try {
+        // 1. Wipe everything and run migrations fresh
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
+        $migrateOutput = \Illuminate\Support\Facades\Artisan::output();
+
+        // 2. Re-seed the default data (like the test users)
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        $seedOutput = \Illuminate\Support\Facades\Artisan::output();
+
+        return "<h1>System Reset Successful!</h1>
+                <h3>Migration Output:</h3><pre>$migrateOutput</pre>
+                <h3>Seeder Output:</h3><pre>$seedOutput</pre>
+                <p><a href='/login'>Go to Login</a></p>";
+    } catch (\Exception $e) {
+        return "<h1>Reset Failed!</h1><pre>" . $e->getMessage() . "</pre>";
+    }
+});
+
 // TEMPORARY USER DEBUG ROUTE
 Route::get('/debug-users', function () {
     try {

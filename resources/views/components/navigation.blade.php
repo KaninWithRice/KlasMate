@@ -2,11 +2,8 @@
 
 @if($isSidebar)
     <div class="flex flex-col h-full p-8">
-        <div class="flex items-center space-x-3 mb-12">
-            <div class="w-10 h-10 bg-[#f5c32f] rounded-lg flex items-center justify-center border border-black shadow-sm">
-                <span class="font-black text-xl">K</span>
-            </div>
-            <span class="font-black text-2xl tracking-tighter">KlasMate</span>
+        <div class="mb-12">
+            <img src="{{ asset('images/logo-desktop.png') }}" class="w-full h-auto max-w-[180px]" alt="KlasMate">
         </div>
 
         <nav class="flex-1 space-y-2">

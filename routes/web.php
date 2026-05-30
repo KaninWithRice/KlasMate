@@ -151,31 +151,25 @@ Route::middleware([
 
     // API Routes
     Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
-        $q = $request->query('q');
+        $q = trim($request->query('q', ''));
         $currentUserId = auth()->id();
         
         $query = \App\Models\User::query();
         
-        // Exclude current user from search
+        // Always exclude current user
         if ($currentUserId) {
             $query->where('id', '!=', $currentUserId);
         }
         
-        if ($q) {
-            $terms = explode(' ', trim($q));
-            $query->where(function($sub) use ($terms) {
-                foreach ($terms as $term) {
-                    if (empty($term)) continue;
-                    $sub->orWhere('name', 'ilike', "%{$term}%") // Use ilike for Postgres case-insensitive
-                        ->orWhere('email', 'ilike', "%{$term}%");
-                }
+        if ($q !== '') {
+            // Very fuzzy search: match name OR email
+            $query->where(function($sub) use ($q) {
+                $sub->where('name', 'ilike', "%{$q}%")
+                    ->orWhere('email', 'ilike', "%{$q}%");
             });
         }
         
-        $users = $query->latest()->take(20)->get();
-        
-        // Log total users count for debugging (seen in Vercel logs)
-        \Log::info("User search by {$currentUserId}: found " . $users->count() . " users. Total in DB: " . \App\Models\User::count());
+        $users = $query->take(20)->get();
         
         return $users;
     });

@@ -110,8 +110,9 @@ Route::middleware(['auth'])->group(function () {
         
         if ($q !== '') {
             $query->where(function($sub) use ($q) {
-                $sub->where('name', 'ILIKE', "%{$q}%")
-                    ->orWhere('email', 'ILIKE', "%{$q}%");
+                $term = '%' . strtolower($q) . '%';
+                $sub->whereRaw('LOWER(name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
             });
         }
         

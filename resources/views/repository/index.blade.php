@@ -219,6 +219,39 @@
     </div>
 </x-bottom-sheet>
 
+<!-- Rename Bottom Sheet -->
+<div x-show="showRenameModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+    <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showRenameModal = false"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl transition-transform duration-300 transform"
+         :class="showRenameModal ? 'translate-y-0' : 'translate-y-full'">
+        <div class="p-8 pb-12">
+            <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
+            <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Rename a File</h2>
+            
+            <form :action="'/files/' + activeFile.id" method="POST" class="space-y-8">
+                @csrf
+                @method('PUT')
+                <div class="relative mt-4">
+                    <label class="absolute -top-2 left-4 bg-white px-1 text-[10.5px] text-[#787878] font-medium uppercase tracking-wider">Name</label>
+                    <input type="text" name="name" x-model="activeFile.name" 
+                        class="w-full px-4 py-3 border-[0.5px] border-black rounded-[8px] focus:outline-none focus:ring-1 focus:ring-black text-[16px] font-medium">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" @click="showRenameModal = false" 
+                        class="flex-1 border border-black py-3 rounded-full font-bold text-[16.4px] text-black">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 bg-[#072ac6] text-white py-3 rounded-full font-bold text-[16.4px]">
+                        Rename
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Share Bottom Sheet -->
 <div x-show="showShareModal" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
     <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]" @click="showShareModal = false"></div>
@@ -285,6 +318,24 @@
                     </div>
                 </template>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div x-show="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/70 backdrop-blur-[2px]" x-cloak>
+    <div class="bg-white border border-black rounded-[10px] w-full max-w-[326px] p-6 shadow-2xl text-center">
+        <h2 class="text-[31px] font-bold text-black mb-2 leading-tight">Delete a File</h2>
+        <p class="text-[14px] text-[#787878] mb-8" x-text="activeFile.name"></p>
+        <p class="text-[16.4px] font-bold text-black mb-10">Are you sure you want to delete?</p>
+        
+        <div class="flex flex-col space-y-3">
+            <form :action="'/files/' + activeFile.id" method="POST" class="w-full">
+                @csrf
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" class="w-full bg-[#f50220] text-white py-3 rounded-full font-bold text-[14px]">Yes, Delete Now</button>
+            </form>
+            <button type="button" @click="showDeleteModal = false" class="w-full border-[1.5px] border-black py-3 rounded-full font-bold text-[14px]">Cancel</button>
         </div>
     </div>
 </div>

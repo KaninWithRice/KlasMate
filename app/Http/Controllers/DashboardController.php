@@ -11,10 +11,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Get recently uploaded approved files
+        // 🚀 Personalized Recent Files: Only show files the user has actually interacted with
+        // Since we don't have a file_visits table yet, let's only show files they've UPLOADED
+        // as a starting point, which matches the 'empty for first log in' requirement.
         $recentFiles = File::where('status', 'approved')
+            ->where('user_id', auth()->id()) // Filter by current user
             ->latest()
-            ->take(5)
+            ->take(6)
             ->get();
 
         // Get all top-level folders joined with visit activity

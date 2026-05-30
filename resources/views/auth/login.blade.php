@@ -4,18 +4,17 @@
 <div class="w-full min-h-screen flex flex-col md:flex-row bg-white">
     <!-- Left Side: Mascot/Branding (Desktop Only) -->
     <div class="hidden md:flex flex-1 bg-[#fcf0cf] flex-col items-center justify-center p-12 text-center">
-        <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[250px] h-auto mb-8">
+        <img src="{{ asset('images/logo-desktop.png') }}" alt="Logo" class="w-[300px] h-auto mb-8">
         <h2 class="text-[64px] font-black text-[#072ac6] leading-tight mb-4">KlasMate</h2>
         <p class="text-[22px] text-[#072ac6]/80 font-medium max-w-lg">Manage your academic courses and files with ease. Connect with KlasMates and share resources.</p>
     </div>
 
     <!-- Right Side: Login Form -->
     <div class="w-full md:w-[500px] lg:w-[600px] p-8 md:p-16 lg:p-24 flex flex-col items-center justify-center">
-            <!-- Mobile Logo -->
-            <div class="md:hidden mb-6">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-[125px] h-auto">
-            </div>
-
+        <!-- Mobile Logo -->
+        <div class="md:hidden mb-6">
+            <img src="{{ asset('images/logo-desktop.png') }}" alt="Logo" class="w-[180px] h-auto">
+        </div>
             <h1 class="text-[36px] font-bold text-[#072ac6] mb-10 tracking-tight text-center">Hi, KlasMate!</h1>
 
             <form action="/login" method="POST" class="w-full space-y-4">

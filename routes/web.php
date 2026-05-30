@@ -23,6 +23,16 @@ Route::get('/migrate', function () {
     }
 });
 
+// TEMPORARY SEED ROUTE
+Route::get('/seed', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        return "<h1>Seeding Successful!</h1><pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
+    } catch (\Exception $e) {
+        return "<h1>Seeding Failed!</h1><pre>" . $e->getMessage() . "</pre>";
+    }
+});
+
 // TEMPORARY USER DEBUG ROUTE
 Route::get('/debug-users', function () {
     try {

@@ -1,6 +1,7 @@
 {
     "name": "KlasMate",
     "short_name": "KlasMate",
+    "description": "KlasMate is an academic repository and sharing platform for students to manage their courses and files.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

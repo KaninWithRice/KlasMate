@@ -6,6 +6,7 @@ use App\Http\Controllers\FolderController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\OtpAuthController;
+use App\Http\Controllers\FriendshipController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -36,10 +37,10 @@ Route::get('/debug-users', function () {
 Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
     $q = trim($request->query('q', ''));
     $query = \App\Models\User::query();
+    $currentUserId = auth()->id();
     
-    // Always exclude current user if logged in
-    if (auth()->check()) {
-        $query->where('id', '!=', auth()->id());
+    if ($currentUserId) {
+        $query->where('id', '!=', $currentUserId);
     }
     
     if ($q !== '') {
@@ -50,7 +51,21 @@ Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
         });
     }
     
-    return $query->orderBy('name', 'asc')->take(20)->get();
+    $users = $query->orderBy('name', 'asc')->take(20)->get();
+
+    // Map friendship status for each user
+    return $users->map(function($user) use ($currentUserId) {
+        $friendship = \App\Models\Friendship::where(function($q) use ($currentUserId, $user) {
+            $q->where('user_id', $currentUserId)->where('friend_id', $user->id);
+        })->orWhere(function($q) use ($currentUserId, $user) {
+            $q->where('user_id', $user->id)->where('friend_id', $currentUserId);
+        })->first();
+
+        $user->friend_status = $friendship ? $friendship->status : 'none';
+        // Check if the current user is the one who SENT the request
+        $user->is_requester = $friendship && $friendship->user_id == $currentUserId;
+        return $user;
+    });
 });
 
 Route::get('/login', function () {
@@ -94,15 +109,41 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/notifications', function() { return view('notifications'); })->name('notifications');
+    Route::get('/notifications', function() { 
+        $requests = auth()->user()->friendRequests;
+        return view('notifications', compact('requests')); 
+    })->name('notifications');
+    
     Route::get('/friends', function() { 
-        $users = \App\Models\User::where('id', '!=', auth()->id())
-            ->orderBy('name', 'asc')
-            ->get();
-        return view('friends', compact('users')); 
+        $friends = auth()->user()->friends;
+        return view('friends', compact('friends')); 
     })->name('friends');
+
+    Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
+    Route::post('/friends/{user}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
+
     Route::get('/settings', function() { return view('settings'); })->name('settings');
-    Route::get('/profile/{user?}', function() { return view('profile'); })->name('profile');
+    Route::get('/profile/{user?}', function($user = null) { 
+        $targetUser = $user ? \App\Models\User::findOrFail($user) : auth()->user();
+        
+        // Privacy Check: Only owner or accepted friends can see profiles
+        if ($targetUser->id !== auth()->id()) {
+            $isFriend = \App\Models\Friendship::where('status', 'accepted')
+                ->where(function($q) use ($targetUser) {
+                    $q->where('user_id', auth()->id())->where('friend_id', $targetUser->id);
+                })->exists();
+                
+            if (!$isFriend) {
+                return redirect()->route('friends')->with('error', 'You must be friends to view this profile.');
+            }
+        }
+        
+        $folders = \App\Models\Folder::where('user_id', $targetUser->id)
+            ->where('is_public', true)
+            ->get();
+            
+        return view('profile', compact('targetUser', 'folders')); 
+    })->name('profile');
     
     Route::post('/logout', function () {
         auth()->logout();

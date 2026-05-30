@@ -40,17 +40,19 @@
                 </div>
             </div>
         @else
-            {{-- Microsoft Office Viewer --}}
-            <div class="w-full h-full flex flex-col">
-                <iframe src="https://view.officeapps.live.com/op/view.aspx?src={{ urlencode($publicUrl) }}" 
-                    class="flex-1 w-full border-none bg-white">
-                </iframe>
-                <div class="bg-black/80 p-4 text-center border-t border-white/10 backdrop-blur-md">
-                    <p class="text-white font-bold text-sm mb-1">{{ $file->name }}</p>
-                    <p class="text-white/80 text-[10px] mb-3">If the preview doesn't load, use the link below:</p>
-                    <div class="flex justify-center space-x-4">
-                        <a href="{{ $publicUrl }}" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition">Open Original File</a>
-                        <a href="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" target="_blank" class="bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/20 transition border border-white/20">Try Google Viewer</a>
+            {{-- Microsoft Office Viewer with Mobile Optimization --}}
+            <div class="w-full h-full flex flex-col bg-white">
+                <div class="flex-1 relative">
+                    <iframe src="https://view.officeapps.live.com/op/view.aspx?src={{ urlencode($publicUrl) }}" 
+                        class="absolute inset-0 w-full h-full border-none">
+                    </iframe>
+                </div>
+                <div class="bg-black/90 p-6 text-center border-t border-white/10 backdrop-blur-xl">
+                    <p class="text-white font-bold text-[15px] mb-1">{{ $file->name }}</p>
+                    <p class="text-white/60 text-[11px] mb-4">If the preview is blank, please use the options below:</p>
+                    <div class="flex flex-col space-y-3 px-4">
+                        <a href="{{ $publicUrl }}" target="_blank" class="w-full bg-blue-600 text-white py-3 rounded-full font-bold text-[14px] shadow-lg">Open Original File</a>
+                        <a href="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" target="_blank" class="w-full bg-white/10 text-white py-3 rounded-full font-bold text-[14px] border border-white/20">Try Google Viewer</a>
                     </div>
                 </div>
             </div>

@@ -28,8 +28,9 @@ class FolderController extends Controller
 
         $folders = Folder::where('parent_id', $folder?->id)->get();
         $files = $folder ? $folder->files()->where('status', 'approved')->get() : [];
+        $friends = auth()->user()->friends;
         
-        return view('repository.index', compact('folders', 'files', 'folder'));
+        return view('repository.index', compact('folders', 'files', 'folder', 'friends'));
     }
 
     public function store(Request $request)

@@ -10,7 +10,7 @@
     isEdit: false,
     search: '',
     shareSearch: '',
-    shareUsers: [],
+    friends: @json($friends),
     sharingFolder: { id: '', name: '', link: '' },
     modalData: { id: '', name: '', code: '', semester: '', color: 'bg-[#f5c32f]', is_public: 1 },
     colors: ['bg-[#f5c32f]', 'bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#ff5aa9]', 'bg-[#af78d3]', 'bg-[#000000]', 'bg-[#ffffff]'],
@@ -30,17 +30,9 @@
         return folders;
     },
 
-    async searchShareUsers() {
-        if (this.shareSearch.length < 1) {
-            this.shareUsers = [];
-            return;
-        }
-        try {
-            const response = await fetch(`/api/users/search?q=${this.shareSearch}`);
-            this.shareUsers = await response.json();
-        } catch (e) {
-            console.error(e);
-        }
+    get filteredShareUsers() {
+        if (!this.shareSearch) return this.friends;
+        return this.friends.filter(u => u.name.toLowerCase().includes(this.shareSearch.toLowerCase()));
     },
 
     openShare(folder) {
@@ -167,7 +159,7 @@
                             </button>
                         </template>
                         <template x-if="folder.is_public">
-                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" @click.stop="">
+                            <button class="w-full text-left px-3 py-2 text-[12px] flex items-center space-x-2 hover:bg-gray-100 text-black" @click.stop="openShare(folder)">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                 <span>Share</span>
                             </button>
@@ -337,7 +329,7 @@
                 <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFolder.name + ' | Course'"></p>
                 
                 <div class="space-y-6">
-                    <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''; searchShareUsers()">
+                    <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''">
                         <div class="flex items-center space-x-4">
                             <div class="w-[30px] h-[30px] text-black">
                                 <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8zm8 7v2m0 0v2m0-2h2m-2 0h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -381,22 +373,28 @@
                 
                 <!-- Search in Share -->
                 <div class="relative mb-6">
-                    <input type="text" placeholder="Search friends..." x-model="shareSearch" @input.debounce.300ms="searchShareUsers()"
+                    <input type="text" placeholder="Search friends..." x-model="shareSearch"
                         class="w-full px-4 py-2 border border-[#787878] rounded-full focus:outline-none focus:ring-1 focus:ring-black text-[12px] font-medium">
                 </div>
 
                 <div class="space-y-4 max-h-[40vh] overflow-y-auto no-scrollbar">
-                    <template x-for="user in shareUsers" :key="user.id">
+                    <template x-for="user in filteredShareUsers" :key="user.id">
                         <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
-                            <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-[40px] h-[40px] bg-[#f5c32f] rounded-full flex items-center justify-center border border-black overflow-hidden shadow-sm">
+                                    <template x-if="user.avatar"><img :src="user.avatar" class="w-full h-full object-cover"></template>
+                                    <template x-if="!user.avatar"><span class="text-[14px] font-bold text-black uppercase" x-text="user.name.charAt(0)"></span></template>
+                                </div>
+                                <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
+                            </div>
                             <button class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all"
-                                    @click="alert('Shared with ' + user.name + '!')">
+                                    @click="alert('Course shared with ' + user.name + ' via chat!')">
                                 Send
                             </button>
                         </div>
                     </template>
-                    <template x-if="shareUsers.length === 0">
-                        <p class="text-center text-[#929292] py-4">Search for friends to share with</p>
+                    <template x-if="filteredShareUsers.length === 0">
+                        <p class="text-center text-[#929292] py-4">No friends found</p>
                     </template>
                 </div>
             </div>

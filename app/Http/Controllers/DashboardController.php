@@ -32,6 +32,8 @@ class DashboardController extends Controller
             ->select('folders.*', 'folder_visits.visited_at')
             ->get();
 
-        return view('dashboard', compact('recentFiles', 'allFolders'));
+        $friends = auth()->user()->friends;
+
+        return view('dashboard', compact('recentFiles', 'allFolders', 'friends'));
     }
 }

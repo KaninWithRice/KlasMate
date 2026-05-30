@@ -12,26 +12,26 @@
     showShareModal: false,
     showShareToFriends: false,
     shareSearch: '',
-    shareUsers: [],
+    friends: @json($friends),
     sharedUsers: [],
     sharingFile: { id: '', name: '', link: '', course: '{{ $folder->code ?? '' }}' },
     activeFile: { id: '', name: '' },
     
-    async searchShareUsers() {
-        if (this.shareSearch.length < 1) {
-            this.shareUsers = [];
-            return;
-        }
-        try {
-            const response = await fetch(`/api/users/search?q=${this.shareSearch}`);
-            this.shareUsers = await response.json();
-        } catch (e) { console.error(e); }
+    get filteredShareUsers() {
+        if (!this.shareSearch) return this.friends;
+        return this.friends.filter(u => u.name.toLowerCase().includes(this.shareSearch.toLowerCase()));
     },
 
     initShare(id, name) {
-        this.sharingFile.id = id;
-        this.sharingFile.name = name;
-        this.sharingFile.link = window.location.origin + '/files/' + id;
+        if (id === 'folder') {
+            this.sharingFile.id = '{{ $folder->id ?? '' }}';
+            this.sharingFile.name = name;
+            this.sharingFile.link = window.location.origin + '/repository/' + '{{ $folder->id ?? '' }}' + '{{ ($folder->invite_token ?? null) ? "?token=".$folder->invite_token : "" }}';
+        } else {
+            this.sharingFile.id = id;
+            this.sharingFile.name = name;
+            this.sharingFile.link = window.location.origin + '/files/' + id;
+        }
         this.showShareModal = true;
         this.openFileDropdown = null;
     },
@@ -51,7 +51,7 @@
 
     async sendToFile(user) {
         this.sharedUsers.push(user.id);
-        alert('Shared with ' + user.name);
+        alert('Shared with ' + user.name + ' via chat!');
     }
 }">
     <!-- Navigation Back -->
@@ -211,7 +211,7 @@
             <h2 class="text-[22.5px] font-bold text-black text-center mb-1 leading-tight">Share a File</h2>
             <p class="text-[13.1px] text-black text-center mb-8" x-text="sharingFile.name + ' | ' + sharingFile.course"></p>
             <div class="space-y-6">
-                <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''; searchShareUsers()">
+                <button class="w-full flex items-center justify-between group" @click="showShareToFriends = true; showShareModal = false; shareSearch = ''">
                     <div class="flex items-center space-x-4 text-left">
                         <div class="w-[30px] h-[30px] text-black">
                             <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8zm8 7v2m0 0v2m0-2h2m-2 0h-2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -245,13 +245,19 @@
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
             <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share to friends</h2>
             <div class="relative mb-6">
-                <input type="text" placeholder="Search friends..." x-model="shareSearch" @input.debounce.300ms="searchShareUsers()"
+                <input type="text" placeholder="Search friends..." x-model="shareSearch"
                     class="w-full px-4 py-2 border border-black rounded-full focus:outline-none text-[12px] font-medium">
             </div>
             <div class="space-y-4 max-h-[50vh] overflow-y-auto no-scrollbar">
-                <template x-for="user in shareUsers" :key="user.id">
+                <template x-for="user in filteredShareUsers" :key="user.id">
                     <div class="flex items-center justify-between border-b border-[#f0f0f0] pb-4">
-                        <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-[40px] h-[40px] bg-[#f5c32f] rounded-full flex items-center justify-center border border-black overflow-hidden shadow-sm">
+                                <template x-if="user.avatar"><img :src="user.avatar" class="w-full h-full object-cover"></template>
+                                <template x-if="!user.avatar"><span class="text-[14px] font-bold text-black uppercase" x-text="user.name.charAt(0)"></span></template>
+                            </div>
+                            <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
+                        </div>
                         <button x-show="!sharedUsers.includes(user.id)" 
                                 class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[11.7px] font-medium active:scale-95 transition-all shadow-sm"
                                 @click="sendToFile(user)">Send</button>
@@ -259,6 +265,9 @@
                             <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         </div>
                     </div>
+                </template>
+                <template x-if="filteredShareUsers.length === 0">
+                    <p class="text-center text-[#929292] py-4">No friends found</p>
                 </template>
             </div>
         </div>
@@ -268,7 +277,7 @@
 <x-bottom-sheet id="uploadSheet" title="Upload to {{ $folder?->code ?? 'Course' }}" @open-upload-sheet.window="open = true">
     <div class="space-y-6">
         <button class="w-full flex items-center space-x-4 group text-left" onclick="document.getElementById('cameraInput').click()">
-            <div class="w-[41px] h-[41px] text-black"><svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="w-[41px] h-[41px] text-black"><svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4-4-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
             <div><p class="text-[16px] font-bold text-black">Camera Roll</p><p class="text-[11.8px] text-[#929292] font-medium">Photos from gallery</p></div>
             <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
                 @csrf

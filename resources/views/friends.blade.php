@@ -84,7 +84,9 @@
                                     <button @click="window.location.href='/notifications'" class="text-[11px] font-bold text-[#f5c32f] underline underline-offset-4 decoration-2">Respond to Request</button>
                                 </template>
                                 <template x-if="user.friend_status === 'accepted'">
-                                    <button @click="window.location.href='/profile/' + user.id" class="text-[11px] font-bold text-[#072ac6] underline underline-offset-4 decoration-2">View Profile</button>
+                                    <button @click="alert('Chat coming soon!')" class="p-2 text-[#072ac6] hover:bg-gray-100 rounded-full transition-colors">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </button>
                                 </template>
                             </div>
                         </div>
@@ -112,9 +114,8 @@
                                     <p class="text-[11px] text-[#787878] font-medium mt-0.5">KlasMate Friend</p>
                                 </div>
                             </div>
-                            <button @click="window.location.href='/profile/{{ $friend->id }}'" 
-                                    class="text-[11px] font-bold text-[#072ac6] underline underline-offset-4 decoration-2">
-                                View Profile
+                            <button @click="alert('Chat coming soon!')" class="p-2 text-[#072ac6] hover:bg-gray-100 rounded-full transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
                         </div>
                     @empty

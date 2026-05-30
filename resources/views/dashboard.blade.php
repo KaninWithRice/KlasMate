@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="p-8 pb-24" x-data="{ 
+<div class="p-8 pb-24" x-data='{ 
     openDropdown: null, 
     showModal: false, 
     showDeleteModal: false,
     showShareModal: false,
     showShareToFriends: false,
     isEdit: false,
-    search: '',
-    shareSearch: '',
+    search: "",
+    shareSearch: "",
     friends: @json($friends),
-    sharingFolder: { id: '', name: '', link: '' },
-    modalData: { id: '', name: '', code: '', semester: '', color: 'bg-[#f5c32f]', is_public: 1 },
-    colors: ['bg-[#f5c32f]', 'bg-[#072ac6]', 'bg-[#07a954]', 'bg-[#f50220]', 'bg-[#ff5aa9]', 'bg-[#af78d3]', 'bg-[#000000]', 'bg-[#ffffff]'],
+    sharingFolder: { id: "", name: "", link: "" },
+    modalData: { id: "", name: "", code: "", semester: "", color: "bg-[#f5c32f]", is_public: 1 },
+    colors: ["bg-[#f5c32f]", "bg-[#072ac6]", "bg-[#07a954]", "bg-[#f50220]", "bg-[#ff5aa9]", "bg-[#af78d3]", "bg-[#000000]", "bg-[#ffffff]"],
     allFolders: {{ $allFolders->toJson() }},
     currentUserId: {{ auth()->id() }},
 
@@ -39,7 +39,7 @@
         this.sharingFolder = {
             id: folder.id,
             name: folder.name,
-            link: window.location.origin + '/repository/' + folder.id + (folder.invite_token ? '?token=' + folder.invite_token : '')
+            link: window.location.origin + "/repository/" + folder.id + (folder.invite_token ? "?token=" + folder.invite_token : "")
         };
         this.showShareModal = true;
         this.openDropdown = null;
@@ -47,13 +47,13 @@
 
     copyShareLink() {
         navigator.clipboard.writeText(this.sharingFolder.link).then(() => {
-            alert('Link copied!');
+            alert("Link copied!");
         });
     },
 
     openAddModal() {
         this.isEdit = false;
-        this.modalData = { id: '', name: '', code: '', semester: '', color: 'bg-[#f5c32f]', is_public: 1 };
+        this.modalData = { id: "", name: "", code: "", semester: "", color: "bg-[#f5c32f]", is_public: 1 };
         this.showModal = true;
     },
     openEditModal(folder) {
@@ -61,9 +61,9 @@
         this.modalData = { 
             id: folder.id, 
             name: folder.name, 
-            code: folder.code || '', 
-            semester: folder.semester || '', 
-            color: folder.color || 'bg-[#f5c32f]',
+            code: folder.code || "", 
+            semester: folder.semester || "", 
+            color: folder.color || "bg-[#f5c32f]",
             is_public: folder.is_public ? 1 : 0
         };
         this.showModal = true;
@@ -75,36 +75,36 @@
         this.openDropdown = null;
     },
     copyInviteLink(folder) {
-        const link = window.location.origin + '/repository/' + folder.id + '?token=' + folder.invite_token;
+        const link = window.location.origin + "/repository/" + folder.id + "?token=" + folder.invite_token;
         navigator.clipboard.writeText(link).then(() => {
-            alert('Invite link copied to clipboard!');
+            alert("Invite link copied to clipboard!");
         });
         this.openDropdown = null;
     },
 
     async sendToChat(user) {
         try {
-            const response = await fetch('{{ route('share.send') }}', {
-                method: 'POST',
+            const response = await fetch("{{ route("share.send") }}", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                    'Accept': 'application/json'
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector("meta[name=csrf-token]").content,
+                    "Accept": "application/json"
                 },
                 body: JSON.stringify({
                     receiver_id: user.id,
-                    type: 'folder',
+                    type: "folder",
                     item_id: this.sharingFolder.id
                 })
             });
             if (response.ok) {
-                alert('Course shared with ' + user.name + ' via chat!');
+                alert("Course shared with " + user.name + " via chat!");
             }
         } catch (e) {
             console.error(e);
         }
     }
-}">
+}'>
     <!-- Header -->
     <div class="flex items-center justify-between mb-10">
         <div class="flex items-center space-x-4">
@@ -411,7 +411,7 @@
                                 <span class="text-[16px] font-bold text-black" x-text="user.name"></span>
                             </div>
                             <button class="bg-[#072ac6] text-white px-6 py-1.5 rounded-full text-[12px] font-bold shadow-sm active:scale-95 transition-all"
-                                    @click="alert('Course shared with ' + user.name + ' via chat!')">
+                                    @click="sendToChat(user)">
                                 Send
                             </button>
                         </div>

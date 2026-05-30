@@ -10,6 +10,7 @@ use App\Http\Controllers\FriendshipController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -146,6 +147,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/share/send', [ChatController::class, 'share'])->name('share.send');
 
     Route::get('/settings', function() { return view('settings'); })->name('settings');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
     Route::get('/profile/{user?}', function($user = null) { 
         $targetUser = $user ? \App\Models\User::findOrFail($user) : auth()->user();
         

@@ -5,17 +5,17 @@
     $isOwner = auth()->check();
 @endphp
 
-<div class="p-6 pb-24" x-data="{ 
-    filter: 'ALL',
+<div class="p-6 pb-24" x-data='{ 
+    filter: "ALL",
     openFileDropdown: null,
     showRenameModal: false,
     showShareModal: false,
     showShareToFriends: false,
-    shareSearch: '',
+    shareSearch: "",
     friends: @json($friends),
     sharedUsers: [],
-    sharingFile: { id: '', name: '', link: '', course: '{{ $folder->code ?? '' }}' },
-    activeFile: { id: '', name: '' },
+    sharingFile: { id: "", name: "", link: "", course: "{{ $folder->code ?? "" }}" },
+    activeFile: { id: "", name: "" },
     
     get filteredShareUsers() {
         if (!this.shareSearch) return this.friends;
@@ -23,14 +23,14 @@
     },
 
     initShare(id, name) {
-        if (id === 'folder') {
-            this.sharingFile.id = '{{ $folder->id ?? '' }}';
+        if (id === "folder") {
+            this.sharingFile.id = "{{ $folder->id ?? "" }}";
             this.sharingFile.name = name;
-            this.sharingFile.link = window.location.origin + '/repository/' + '{{ $folder->id ?? '' }}' + '{{ ($folder->invite_token ?? null) ? "?token=".$folder->invite_token : "" }}';
+            this.sharingFile.link = window.location.origin + "/repository/" + "{{ $folder->id ?? "" }}" + "{{ ($folder->invite_token ?? null) ? "?token=".$folder->invite_token : "" }}";
         } else {
             this.sharingFile.id = id;
             this.sharingFile.name = name;
-            this.sharingFile.link = window.location.origin + '/files/' + id;
+            this.sharingFile.link = window.location.origin + "/files/" + id;
         }
         this.showShareModal = true;
         this.openFileDropdown = null;
@@ -45,34 +45,34 @@
 
     copyShareLink() {
         navigator.clipboard.writeText(this.sharingFile.link).then(() => {
-            alert('Link copied!');
+            alert("Link copied!");
         });
     },
 
     async sendToFile(user) {
         try {
-            const response = await fetch('{{ route('share.send') }}', {
-                method: 'POST',
+            const response = await fetch("{{ route("share.send") }}", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                    'Accept': 'application/json'
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector("meta[name=csrf-token]").content,
+                    "Accept": "application/json"
                 },
                 body: JSON.stringify({
                     receiver_id: user.id,
-                    type: this.sharingFile.id === 'folder' ? 'folder' : 'file',
-                    item_id: this.sharingFile.id === 'folder' ? '{{ $folder->id ?? '' }}' : this.sharingFile.id
+                    type: this.sharingFile.id === "folder" ? "folder" : "file",
+                    item_id: this.sharingFile.id === "folder" ? "{{ $folder->id ?? "" }}" : this.sharingFile.id
                 })
             });
             if (response.ok) {
                 this.sharedUsers.push(user.id);
-                alert('Shared with ' + user.name + ' via chat!');
+                alert("Shared with " + user.name + " via chat!");
             }
         } catch (e) {
             console.error(e);
         }
     }
-}">
+}'>
     <!-- Navigation Back -->
     <div class="mb-6">
         @if(!$isOwner && $folder && $folder->user)
@@ -260,7 +260,8 @@
     <!-- Share to Friends Bottom Sheet -->
     <div x-show="showShareToFriends" class="fixed inset-0 z-[100] overflow-hidden" x-cloak x-transition>
         <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="showShareToFriends = false"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300">
+        <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-black rounded-t-[50px] shadow-2xl p-8 pb-12 transition-transform duration-300 transform"
+             :class="showShareToFriends ? 'translate-y-0' : 'translate-y-full'">
             <div class="w-[102px] h-[6px] bg-[#d9d9d9] rounded-full mx-auto mb-8"></div>
             <h2 class="text-[22.5px] font-bold text-black text-center mb-8 leading-tight">Share to friends</h2>
             <div class="relative mb-6">

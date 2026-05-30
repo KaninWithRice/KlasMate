@@ -10,6 +10,7 @@ class ProfileController extends Controller
 {
     public function update(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         $request->validate([
@@ -20,8 +21,17 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = '/storage/' . $path;
+            $file = $request->file('avatar');
+            $disk = config('filesystems.default');
+            
+            // Store at root for clean URLs in Supabase
+            $path = $file->store('', $disk);
+            $filename = basename($path);
+            
+            // Supabase Public URL logic
+            $projectRef = 'stcuxchsqfeaejpjsfkw'; 
+            $bucket = 'reviewers';
+            $user->avatar = "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}/{$filename}";
         }
 
         if ($request->has('name')) $user->name = $request->name;

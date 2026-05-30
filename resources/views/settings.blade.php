@@ -21,7 +21,8 @@
                     <span class="text-[20px] font-bold text-black uppercase">{{ substr(auth()->user()->name, 0, 1) }}</span>
                 @endif
             </div>
-            <button onclick="document.getElementById('profilePicSheet').__x.$data.open = true" class="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-black rounded-full flex items-center justify-center shadow-sm">
+            <button x-show="isEditing" @click="document.getElementById('profilePicSheet').__x.$data.open = true" 
+                    class="absolute -bottom-1 -right-1 w-5 h-5 bg-white border border-black rounded-full flex items-center justify-center shadow-sm" x-cloak>
                 <svg class="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </button>
         </div>

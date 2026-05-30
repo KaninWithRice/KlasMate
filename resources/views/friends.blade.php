@@ -39,6 +39,11 @@
 }" x-init="init()">
     <h1 class="text-[31px] font-bold text-black leading-tight mt-4 mb-6">Friends</h1>
 
+    <!-- Diagnostic Info (Delete later) -->
+    <div class="mb-4 text-[10px] text-[#787878] font-mono" x-show="true">
+        API Results: <span x-text="users.length"></span>
+    </div>
+
     <!-- Search Bar -->
     <div class="relative mb-6">
         <span class="absolute inset-y-0 left-4 flex items-center text-[#787878]">

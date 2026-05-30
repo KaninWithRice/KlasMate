@@ -32,24 +32,25 @@ Route::get('/debug-users', function () {
     ];
 });
 
-// 🚀 PUBLIC SEARCH API (Top level for maximum reliability)
+// 🚀 PUBLIC SEARCH API
 Route::get('/api/users/search', function (\Illuminate\Http\Request $request) {
     $q = trim($request->query('q', ''));
     $query = \App\Models\User::query();
     
+    // Always exclude current user if logged in
     if (auth()->check()) {
         $query->where('id', '!=', auth()->id());
     }
     
     if ($q !== '') {
         $query->where(function($sub) use ($q) {
-            // Case-insensitive matching for both name and email
-            $sub->where('name', 'ILIKE', "%{$q}%")
-                ->orWhere('email', 'ILIKE', "%{$q}%");
+            $term = '%' . strtolower($q) . '%';
+            $sub->whereRaw('LOWER(name) LIKE ?', [$term])
+                ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
         });
     }
     
-    return $query->latest()->take(20)->get();
+    return $query->orderBy('name', 'asc')->take(20)->get();
 });
 
 Route::get('/login', function () {

@@ -13,7 +13,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
 // TEMPORARY MIGRATION ROUTE
@@ -75,10 +75,16 @@ Route::get('/debug-users', function () {
 });
 
 Route::get('/login', function () {
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
     return view('auth.login');
 })->name('login');
 
 Route::get('/register', function () {
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
     return view('auth.register');
 })->name('register');
 
@@ -87,14 +93,25 @@ Route::post('/register', function (\Illuminate\Http\Request $request) {
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
         'password' => ['required', 'string', 'min:8', 'confirmed'],
+        'school' => ['nullable', 'string', 'max:255'],
+        'program' => ['nullable', 'string', 'max:255'],
     ]);
-    $user = \App\Models\User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => \Illuminate\Support\Facades\Hash::make($request->password),
-    ]);
-    auth()->login($user);
-    return redirect('/dashboard');
+
+    try {
+        $user = \App\Models\User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+            'school' => $request->school,
+            'program' => $request->program,
+        ]);
+        
+        auth()->login($user);
+        
+        return redirect('/dashboard');
+    } catch (\Exception $e) {
+        return back()->withErrors(['email' => 'Registration failed: ' . $e->getMessage()])->withInput();
+    }
 });
 
 Route::post('/login', function (\Illuminate\Http\Request $request) {

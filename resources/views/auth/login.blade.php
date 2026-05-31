@@ -22,6 +22,16 @@
 
             <h1 class="text-[36px] font-black text-[#072ac6] mb-10 tracking-tight text-center leading-none">Hi, KlasMate!</h1>
 
+            @if($errors->any())
+                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-[12px] rounded-r-xl w-full max-w-sm">
+                    <ul class="list-disc list-inside">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="/login" method="POST" class="w-full space-y-4 max-w-sm">
                 @csrf
                 <!-- Email Field -->
@@ -31,8 +41,11 @@
                             <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                         </svg>
                     </span>
-                    <input type="email" name="email" placeholder="Email Address" required 
-                        class="w-full pl-12 pr-4 py-3.5 border-2 border-[#072ac6]/10 rounded-full focus:outline-none focus:ring-2 focus:ring-[#072ac6]/20 transition-all text-[#072ac6] placeholder-[#072ac6]/40 text-[15px] font-medium bg-gray-50">
+                    <input type="email" name="email" value="{{ old('email') }}" placeholder="Email Address" required 
+                        class="w-full pl-12 pr-4 py-3.5 border-2 @error('email') border-red-500 @else border-[#072ac6]/10 @enderror rounded-full focus:outline-none focus:ring-2 focus:ring-[#072ac6]/20 transition-all text-[#072ac6] placeholder-[#072ac6]/40 text-[15px] font-medium bg-gray-50">
+                    @error('email')
+                        <p class="text-red-500 text-[10px] mt-1 ml-4 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Password Field -->
@@ -43,13 +56,16 @@
                         </svg>
                     </span>
                     <input type="password" name="password" id="password" placeholder="Password" required 
-                        class="w-full pl-12 pr-12 py-3.5 border-2 border-[#072ac6]/10 rounded-full focus:outline-none focus:ring-2 focus:ring-[#072ac6]/20 transition-all text-[#072ac6] placeholder-[#072ac6]/40 text-[15px] font-medium bg-gray-50">
+                        class="w-full pl-12 pr-12 py-3.5 border-2 @error('password') border-red-500 @else border-[#072ac6]/10 @enderror rounded-full focus:outline-none focus:ring-2 focus:ring-[#072ac6]/20 transition-all text-[#072ac6] placeholder-[#072ac6]/40 text-[15px] font-medium bg-gray-50">
                     <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-4 flex items-center text-[#072ac6]">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                     </button>
+                    @error('password')
+                        <p class="text-red-500 text-[10px] mt-1 ml-4 font-bold">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Forgot Password -->

@@ -41,18 +41,41 @@
             </div>
         @else
             {{-- Microsoft Office Viewer with Mobile Optimization --}}
-            <div class="w-full h-full flex flex-col bg-white">
-                <div class="flex-1 relative">
-                    <iframe src="https://view.officeapps.live.com/op/view.aspx?src={{ urlencode($publicUrl) }}" 
-                        class="absolute inset-0 w-full h-full border-none">
+            <div class="w-full h-full flex flex-col bg-white" x-data="{ loading: true }">
+                <div class="flex-1 relative bg-gray-100">
+                    <!-- Loading Indicator -->
+                    <div x-show="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 z-10">
+                        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p class="text-gray-500 font-bold animate-pulse text-sm">Preparing Preview...</p>
+                    </div>
+
+                    <iframe 
+                        src="https://view.officeapps.live.com/op/embed.aspx?src={{ urlencode($publicUrl) }}" 
+                        class="absolute inset-0 w-full h-full border-none z-0"
+                        @load="loading = false">
                     </iframe>
                 </div>
-                <div class="bg-black/90 p-6 text-center border-t border-white/10 backdrop-blur-xl">
-                    <p class="text-white font-bold text-[15px] mb-1">{{ $file->name }}</p>
-                    <p class="text-white/60 text-[11px] mb-4">If the preview is blank, please use the options below:</p>
-                    <div class="flex flex-col space-y-3 px-4">
-                        <a href="{{ $publicUrl }}" target="_blank" class="w-full bg-blue-600 text-white py-3 rounded-full font-bold text-[14px] shadow-lg">Open Original File</a>
-                        <a href="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" target="_blank" class="w-full bg-white/10 text-white py-3 rounded-full font-bold text-[14px] border border-white/20">Try Google Viewer</a>
+                
+                <!-- Mobile Control Panel -->
+                <div class="bg-[#1a1a1a] p-5 pb-8 text-center border-t border-white/10 backdrop-blur-xl">
+                    <p class="text-white font-bold text-[14px] mb-1 truncate px-4">{{ $file->name }}</p>
+                    <p class="text-white/40 text-[10px] mb-4 uppercase tracking-widest font-black">Document Preview</p>
+                    
+                    <div class="grid grid-cols-2 gap-3 px-2">
+                        <a href="{{ $publicUrl }}" target="_blank" class="flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 rounded-xl font-bold text-[13px] active:scale-95 transition-transform">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span>Open Original</span>
+                        </a>
+                        <a href="https://docs.google.com/viewer?url={{ urlencode($publicUrl) }}&embedded=true" target="_blank" class="flex items-center justify-center space-x-2 bg-white/10 text-white py-3 rounded-xl font-bold text-[13px] border border-white/20 active:scale-95 transition-transform">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span>Google Viewer</span>
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{{ route('files.download', $file) }}" class="text-white/40 text-[11px] font-bold hover:text-white transition-colors underline decoration-white/20 underline-offset-4">
+                            Or download the file directly
+                        </a>
                     </div>
                 </div>
             </div>

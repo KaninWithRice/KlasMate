@@ -68,6 +68,7 @@ class FileController extends Controller
         $extension = strtolower(pathinfo($file->path, PATHINFO_EXTENSION)) ?: strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
         $isPDF = $extension === 'pdf';
+        $isDoc = in_array($extension, ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx']);
         
         // 🚀 THE FINAL PROJECT REF FIX:
         $projectRef = 'stcuxchsqfeaejpjsfkw'; 
@@ -79,7 +80,7 @@ class FileController extends Controller
         
         $streamUrl = route('files.stream', $file);
 
-        return view('repository.view', compact('file', 'isImage', 'isPDF', 'streamUrl', 'extension', 'publicUrl'));
+        return view('repository.view', compact('file', 'isImage', 'isPDF', 'isDoc', 'streamUrl', 'extension', 'publicUrl'));
     }
 
     public function stream(File $file)

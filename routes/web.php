@@ -81,6 +81,16 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
+Route::get('/forgot-password', function () {
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
+    return view('auth.forgot-password');
+})->name('forgot-password');
+
+Route::post('/forgot-password/send-otp', [OtpAuthController::class, 'sendOtp']);
+Route::post('/forgot-password/verify-otp', [OtpAuthController::class, 'verifyOtp']);
+
 Route::get('/register', function () {
     if (auth()->check()) {
         return redirect('/dashboard');
